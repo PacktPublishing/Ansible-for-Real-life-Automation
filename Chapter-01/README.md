@@ -1,5 +1,7 @@
 # Intalling Ansible on RHEL OS
 
+Read official documentation [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) for other platforms.
+
 Check if Python installed
 
 ```shell
