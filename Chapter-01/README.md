@@ -187,7 +187,7 @@ List new inventory
 
 Ansible help
 
-``shell
+```shell
 [ansible@ansible ansible-demo]$ ansible --help
 .
 .
@@ -207,7 +207,7 @@ Ansible help
 .
 .
 .
-````
+```
 
 Filtering nodes
 
