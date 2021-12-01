@@ -1,0 +1,28 @@
+---
+- name: Sync Content to git
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  vars:
+    sync_dirs:
+      - src_dir: /Users/gini/workarea/ansible-book-packt/
+        dst_dir: /Users/gini/codes/Ansible-for-Real-life-Automation/
+
+  tasks:
+    - name: Sync dir to main Git Dir
+      synchronize:
+        src: "{{ item.src_dir }}"
+        dest: "{{ item.dst_dir }}"
+        recursive: yes
+        delete: yes
+        rsync_opts:
+          - "--exclude=.git"
+      loop: "{{ sync_dirs }}"
+      #when: copyfiles is defined
+
+    - name: Push to Git
+      shell:
+        cmd: 'git add ./;git commit -m "update";git push'
+        chdir: "{{ item.dst_dir }}"
+      loop: "{{ sync_dirs }}"
+
