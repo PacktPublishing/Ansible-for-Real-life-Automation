@@ -1,0 +1,30 @@
+---
+- name: Sync Content to LAB
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  vars:
+    sync_dirs:
+      - src_dir: /Users/gini/workarea/ansible-book/
+        dst_dir: /Users/gini/codes/Ansible-for-Real-life-Automation/
+        lab_dir: ~/codes/vagrant-iac-usecases/virtualbox-ansible-lab-special
+
+  tasks:
+    #- name: Sync dir to main Git Dir
+    #  synchronize:
+    #    src: "{{ item.src_dir }}"
+    #    dest: "{{ item.dst_dir }}"
+    #    recursive: yes
+    #    delete: yes
+    #    rsync_opts:
+    #      - "--exclude=.git"
+    #      - "--exclude=sync-content.yaml"
+    #  loop: "{{ sync_dirs }}"
+    #  #when: copyfiles is defined
+
+    - name: Copy content to LAB VM
+      shell:
+        cmd: 'vagrant scp ~/workarea/ansible-book-packt ansible:/home/ansible/ansible-book'
+        chdir: "{{ item.lab_dir }}"
+      loop: "{{ sync_dirs }}"
+
