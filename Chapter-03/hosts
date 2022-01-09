@@ -1,9 +1,8 @@
 [nodes]
-node1 ansible_host=192.168.100.1
+node1 ansible_host=192.168.56.25
 
 [web]
-webserver1 ansible_host=192.168.100.2
+node2 ansible_host=192.168.56.24
 
-[dev:vars]
+[all:vars]
 ansible_ssh_private_key_file=/home/ansible/.ssh/id_rsa 
-ansible_user=devops

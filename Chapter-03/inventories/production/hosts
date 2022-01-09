@@ -1,5 +1,0 @@
-[win2019]
-prod-db-101 ansible_host=192.168.110.10
-
-[win2019:vars]
-ansible_connection=winrm

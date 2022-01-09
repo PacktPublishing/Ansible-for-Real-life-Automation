@@ -1,0 +1,7 @@
+---
+# tasks file for system-report
+- name: Generate and save system report in html format
+  template:
+    dest: /var/www/html/{{ inventory_hostname }}.html
+    src: system-information.html.j2
+  delegate_to: node2
