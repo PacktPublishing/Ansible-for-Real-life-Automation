@@ -1,0 +1,8 @@
+---
+# tasks file for security-baseline-rhel8
+
+- name: "Running Part 01 checks"
+  include_tasks: "part-01.yml"
+
+- name: "Running Part 02 checks"
+  include_tasks: "part-02.yml"

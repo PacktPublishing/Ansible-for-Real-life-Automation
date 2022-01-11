@@ -1,0 +1,13 @@
+---
+- name: Performing Security Scanning and Configuration - RHEL8
+  hosts: "{{ NODES }}"              # give NODES during playbook. 
+                                    # eg: -e "NODES=webservers"
+  become: true
+  vars_files:
+    - vars/common.yml                  # common variables
+    - vars/baseline_exclusions.yml     # exclusion list
+
+  tasks:
+    - name: 'Starting Scanning'
+      include_role:
+        name: security-baseline-rhel8
