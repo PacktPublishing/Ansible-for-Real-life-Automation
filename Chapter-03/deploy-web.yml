@@ -1,0 +1,7 @@
+- name: Deploy Webserver using apache
+  hosts: web
+  become: true
+  tasks:
+    - name: Deploy Web service
+      include_role: 
+        name: deploy-web-server

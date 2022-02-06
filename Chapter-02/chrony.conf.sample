@@ -1,0 +1,10 @@
+server 0.sg.pool.ntp.org
+server 1.sg.pool.ntp.org
+server 2.sg.pool.ntp.org
+server 3.sg.pool.ntp.org
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+keyfile /etc/chrony.keys
+leapsectz right/UTC
+logdir /var/log/chrony
