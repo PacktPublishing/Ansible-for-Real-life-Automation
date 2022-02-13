@@ -1,0 +1,42 @@
+[local]
+localhost ansible_connection=local
+
+[coreswtiches]
+c7000-sw01 ansible_host=192.168.0.242
+
+[coreswtiches:vars]
+ansible_connection=ansible.netcommon.network_cli
+ansible_network_os=cisco.ios.ios
+ansible_password='Cisco@123'
+ansible_user=admin
+ansible_become_method=enable
+ansible_become_password='Cisco@123'
+
+[distributionswtiches]
+hp5130ds01 ansible_host=192.168.0.253
+
+[distributionswtiches:vars]
+#ansible_network_os=auto
+#ansible_connection=netconf
+ansible_password=Cisco
+ansible_user=cisco
+
+[accessswtiches]
+c2960sw01 ansible_host=192.168.0.240
+c2960sw02 ansible_host=192.168.0.241
+
+[accessswtiches:vars]
+ansible_connection=network_cli
+ansible_password=Cisco
+ansible_user=cisco
+ansible_network_os=ios
+ansible_become_password=Cisco
+
+[vyos]
+vyos-01 ansible_host=192.168.56.44
+
+[vyos:vars]
+ansible_connection=ansible.netcommon.network_cli 
+ansible_user=vyosuser
+ansible_password=vyispassword
+ansible_network_os=vyos.vyos.vyos

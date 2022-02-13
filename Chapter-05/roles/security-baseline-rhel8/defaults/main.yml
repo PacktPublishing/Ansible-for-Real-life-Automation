@@ -1,0 +1,5 @@
+---
+# defaults file for security-baseline-rhel8
+sudo_log: "/var/log/sudoers"
+motd_file: "banner"
+issue_file: "issue"
