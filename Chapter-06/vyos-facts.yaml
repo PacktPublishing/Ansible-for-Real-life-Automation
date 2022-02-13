@@ -1,0 +1,13 @@
+---
+- name: Collecting VyOS facts
+  connection: ansible.netcommon.network_cli
+  gather_facts: false
+  hosts: vyos
+  tasks:
+    - name: Fetching VyOS details
+      vyos.vyos.vyos_facts:
+        gather_subset: all
+
+    - name: Display fact output
+      debug:
+        msg: "VyOS version: {{ ansible_net_version }}"

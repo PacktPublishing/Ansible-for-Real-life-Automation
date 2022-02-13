@@ -1,0 +1,15 @@
+---
+- name: "Create New user on Windows Machine"
+  hosts: "{{ NODES }}"
+  vars:
+    windows_username: "john"
+    windows_password: "MyP4ssw0rd"
+  tasks:
+    - name: Create a new User 
+      win_user:
+        name: "{{ windows_username }}"
+        password: "{{ windows_password }}"
+        state: present
+        groups:
+          - Users
+      when: ansible_os_family == 'Windows'

@@ -1,0 +1,2 @@
+# file: stg/host_vars/node1.yaml
+web_server_port: 8080

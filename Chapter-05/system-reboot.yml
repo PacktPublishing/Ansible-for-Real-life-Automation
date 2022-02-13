@@ -1,0 +1,19 @@
+---
+- name: System Reboot Linux
+  hosts: "{{ NODES }}"
+  gather_facts: no
+  become: true
+  tasks:
+    - name: Running Pre-reboot tasks
+      debug:
+        msg: "Taking backup and snapshot" 
+        # you can include your backup and other jobs here.
+
+    - name: Reboot node and wait for 5 min
+      reboot:
+        reboot_timeout: 300
+
+    - name: Running Post-reboot tasks
+      debug:
+        msg: "Verifying services and filesystem" 
+        # you can include your verification tasks here.        

@@ -1,0 +1,34 @@
+---
+# tasks file for deploy-web-server
+
+- name: Create directory
+  ansible.builtin.file:
+    state: directory
+    path: /var/www/html
+    mode: '0755'
+    
+- name: Install httpd and firewalld
+  ansible.builtin.yum:
+    name: 
+      - httpd
+      - firewalld
+    state: latest
+
+- name: Enable and Run Firewalld
+  ansible.builtin.service: 
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Firewalld permit httpd service
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    state: enabled
+    immediate: yes
+
+- name: httpd enabled and running
+  ansible.builtin.service:
+    name: httpd
+    enabled: true
+    state: started

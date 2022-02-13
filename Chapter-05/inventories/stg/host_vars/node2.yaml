@@ -1,0 +1,3 @@
+# file: stg/host_vars/node2.yaml
+web_server_port: 8081
+default_web_page_content: "Welcome to node2"
