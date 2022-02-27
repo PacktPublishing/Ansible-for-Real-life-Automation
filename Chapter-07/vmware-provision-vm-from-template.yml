@@ -1,0 +1,59 @@
+---
+- name: "Provision VM from Template"
+  hosts: localhost
+  gather_facts: no
+  become: no
+  connection: local   
+  vars_files:
+    - vars/vmware-vm-list.yaml      # list of VM's to create
+    - vars/common-vars.yml          # other common variables
+    - vars/vmware-credential.yaml   # vcenter credential
+  tasks:
+    - name: Deploy new VM in vCenter
+      ansible.builtin.include_role:
+        name: vmware-provision-vm-from-template
+      tags: provisionvmfromtemplate
+
+    - name: Waits for SSH (VM UP and Running)
+      ansible.builtin.wait_for:
+        host: "{{ vm_net1_ip_address }}"
+        port: 22
+        delay: "{{ vm_wait_for_ssh_time }}"
+        timeout: 300
+        state: started
+      when: vm_wait_for_ip_connection == "yes"
+
+    - name: Add newly created VMs to a host group
+      no_log: true
+      ansible.builtin.add_host:
+        name: "{{ vm_net1_ip_address }}"
+        groups: "vmwarenewvms"
+        ansible_ssh_extra_args: ' -o StrictHostKeyChecking=no '
+        ansible_user: "{{ vm_ansible_user_name }}"
+        ansible_password: "{{ vm_ansible_user_password }}"
+        var_vm_os_family: "{{ vm_os_family }}"
+        var_vm_user_name_list: "{{ vm_user_name_list }}"
+        var_vm_user_password: "{{ vm_user_password }}"
+      when: vm_os_family == "RHEL"
+
+- name: RHEL VM Post-Provisioning Configurations
+  hosts: vmwarenewvms
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: Waiting for SSH
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 1
+        timeout: 300
+        state: started
+      when: var_vm_os_family is defined
+      become: no
+      vars:
+        ansible_connection: local
+
+    - name: New VM post-provisioning configurations
+      debug:
+        msg: "You can include additonal tasks to execute inside the new VM as post provisioning configurations"
+      when: var_vm_os_family is defined

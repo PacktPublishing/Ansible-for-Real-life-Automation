@@ -1,0 +1,359 @@
+# Test code for the vmware_guest_register_operation module
+# Copyright: (c) 2019, sky-joker <sky.jokerxx@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- import_role:
+    name: prepare_vmware_tests
+  vars:
+    setup_attach_host: true
+    setup_datastore: true
+    setup_cluster: true
+    setup_virtualmachines: true
+    setup_resource_pool: true
+
+- name: gather facts of vm
+  vmware_guest_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "{{ f0 }}"
+    name: "{{ virtual_machines[0].name }}"
+  register: vm_facts
+
+- name: get a vm vmx file path
+  set_fact: vm_vmx_file_path="{{ vm_facts.instance.hw_files[0] }}"
+
+- name: Powered off the vm
+  vmware_guest_powerstate:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    folder: /vm
+    name: "{{ virtual_machines[0].name }}"
+    state: powered-off
+
+- name: Unregister VM from inventory with check_mode
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    state: absent
+  check_mode: true
+  register: unregister_vm_inventory_check_mode_result
+
+- name: Make sure the changed occurred
+  assert:
+    that:
+      - unregister_vm_inventory_check_mode_result.changed is sameas true
+
+- name: Unregister VM from inventory
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    state: absent
+  register: unregister_vm_inventory_result1
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | map(attribute='guest_name')
+        | list
+        | length == 0
+      - unregister_vm_inventory_result1.changed is sameas true
+
+- assert:
+    that:
+      - item.guest_name != virtual_machines[0].name
+  loop: "{{ vms.virtual_machines }}"
+
+- name: Register VM to inventory with check_mode
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    esxi_hostname: "{{ esxi1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    path: "{{ vm_vmx_file_path }}"
+    state: present
+  check_mode: true
+  register: register_vm_inventory_check_mode_result
+
+- name: Make sure the changed occurred
+  assert:
+    that:
+      - register_vm_inventory_check_mode_result.changed is sameas true
+
+- name: Register VM to inventory
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    esxi_hostname: "{{ esxi1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    path: "{{ vm_vmx_file_path }}"
+    state: present
+  register: register_vm_inventory_result
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | selectattr('esxi_hostname', 'equalto', esxi1)
+        | map(attribute='guest_name')
+        | list
+        | length == 1
+      - register_vm_inventory_result.changed is sameas true
+
+- name: Unregister VM from inventory
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    state: absent
+  register: unregister_vm_inventory_result2
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | map(attribute='guest_name')
+        | list
+        | length == 0
+      - unregister_vm_inventory_result2.changed is sameas true
+
+- name: Register VM in Cluster with check_mode
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    path: "{{ vm_vmx_file_path }}"
+    state: present
+  check_mode: true
+  register: register_vm_cluster_check_mode_result
+
+- name: Make sure the changed occurred
+  assert:
+    that:
+      - register_vm_cluster_check_mode_result.changed is sameas true
+
+- name: Register VM in Cluster
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    path: "{{ vm_vmx_file_path }}"
+    state: present
+  register: register_vm_cluster_result
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | selectattr('cluster', 'equalto', ccr1)
+        | map(attribute='guest_name')
+        | list
+        | length == 1
+      - register_vm_cluster_result.changed is sameas true
+
+- name: Unregister VM from inventory
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    state: absent
+  register: unregister_vm_inventory_result3
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | map(attribute='guest_name')
+        | list
+        | length == 0
+      - unregister_vm_inventory_result3.changed is sameas true
+
+- name: Register VM in Resource pool with check_mode
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    resource_pool: DC0_C0_RP1
+    name: "{{ virtual_machines[0].name }}"
+    path: "{{ vm_vmx_file_path }}"
+    state: present
+  check_mode: true
+  register: register_vm_resource_pool_check_mode_result
+
+- name: Make sure the changed occurred
+  assert:
+    that:
+      - register_vm_resource_pool_check_mode_result.changed is sameas true
+
+- name: Register VM in Resource pool
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    resource_pool: DC0_C0_RP1
+    name: "{{ virtual_machines[0].name }}"
+    path: "{{ vm_vmx_file_path }}"
+    state: present
+  register: register_vm_resource_pool_result
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | map(attribute='guest_name')
+        | list
+        | length == 1
+      - register_vm_resource_pool_result.changed is sameas true
+
+- name: Gather facts of vm
+  vmware_guest_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    name: "{{ virtual_machines[0].name }}"
+  register: vm_facts
+
+- name: Get a vm uuid
+  set_fact: vm_uuid="{{ vm_facts.instance.hw_product_uuid }}"
+
+- name: Unregister VM from inventory with uuid parameter
+  vmware_guest_register_operation:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ dc1 }}"
+    folder: "/vm"
+    cluster: "{{ ccr1 }}"
+    name: "{{ virtual_machines[0].name }}"
+    uuid: "{{ vm_uuid }}"
+    state: absent
+  register: unregister_vm_inventory_result4
+
+- name: Gather all registered virtual machines
+  vmware_vm_info:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: false
+  register: vms
+
+- assert:
+    that:
+      - >-
+        vms.virtual_machines
+        | selectattr('guest_name', 'equalto', virtual_machines[0].name)
+        | map(attribute='guest_name')
+        | list
+        | length == 0
+      - unregister_vm_inventory_result4.changed is sameas true

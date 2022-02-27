@@ -1,0 +1,18 @@
+---
+# vmware-provisioning-pre-check.yaml
+- name: Check if VM exist with same name
+  no_log: true
+  community.vmware.vmware_guest_find:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    name: "{{ vm_name }}"
+  delegate_to: localhost
+  register: vm_check
+  ignore_errors: yes
+
+- name: If VM with same name already exist
+  debug:
+    msg: "The virtual machine {{ vm_name }} already exist. Skipping tasks..."
+  when: not vm_check.failed

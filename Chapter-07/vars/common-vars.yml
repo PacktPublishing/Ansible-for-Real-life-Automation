@@ -1,0 +1,45 @@
+# details about the cluster
+vcenter_hostname: vcenter.lab.local
+vmware_datacenter: DC1
+vmware_cluster_name: 'AZ1'
+vmware_datastore: 'datastore1'
+vm_folder: "/"
+
+# details for the new VM
+vm_name: 'DC1AZ1POC101'
+vm_template_name: 'RHEL7-New'
+# disk details
+vm_disk_size_gb: '40'
+vm_disk_type: 'thin'
+vm_disk_datastore_name: 'datastore1'
+# capacity and hardware
+vm_memory_size_mb: '8192'
+vm_number_cpus: '2'
+vm_number_cpu_cores_per_socket: '1'
+# network card 1
+vm_net1_name: 'VM Network'
+vm_net1_ip_address: '10.6.1.210'
+vm_net1_subnet_mask: '255.255.255.128'
+vm_net1_gateway_ip: '10.6.1.129'
+vm_net1_network_type: 'static'
+vm_net1_network_device_type: 'e1000e' # 'vmxnet3'
+# network card 2
+vm_net2_name: 'VM Network'
+vm_net2_ip_address: '10.6.1.209'
+vm_net2_subnet_mask: '255.255.255.128'
+vm_net2_gateway_ip: '10.6.1.129'
+vm_net2_network_type: 'static'
+vm_net2_network_device_type: 'e1000e' # 'vmxnet3'
+
+#vm_domain: 'lab.local'
+#vm_user_name: 'newuser'
+#vm_user_password: 'password'
+#vm_user_name_list: |-
+#  user1
+#  user2
+#  user3
+vm_wait_for_ip_connection: "no" #"yes"
+vm_wait_for_customization: "no" #"yes"
+vm_dns_servers: ['10.1.10.100', '10.1.10.200']
+vm_os_family: 'RHEL'
+vm_wait_for_ssh_time: 30 #add in JobTemplate

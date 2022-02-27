@@ -1,0 +1,70 @@
+---
+# vmware-provisioning-task.yaml
+- name: "Provisioning New VM using template {{ vm_template_name }}"
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    datacenter: "{{ vmware_datacenter }}"
+    cluster: "{{ vmware_cluster_name }}"
+    folder: "{{ vm_folder }}"
+    #guest_id: "{{ vm_guest_id }}"
+    name: "{{ vm_name }}"
+    template: "{{ vm_template_name }}"
+    state: poweredon
+    wait_for_ip_address: "{{ vm_wait_for_ip_connection }}"
+    wait_for_customization: "{{ vm_wait_for_customization }}"
+    #customization_spec: "{{ vm_base_profile }}"
+    datastore: "{{ vmware_datastore }}"
+    
+    #customization:
+      #hostname: '{{ vm_name | lower }}'
+      #domain: '{{ vm_domain | lower }}'
+      #password: '{{ vm_user_password }}' # Windows only
+      #autologon: yes # Windows only
+      #dns_servers: "{{ vm_dns_servers }}"
+
+    disk:
+    - size_gb: "{{ vm_disk_size_gb }}"
+      type: "{{ vm_disk_type }}"
+      datastore: "{{ vm_disk_datastore_name }}"
+    
+    hardware:
+      memory_mb: "{{ vm_memory_size_mb }}"
+      num_cpus: "{{ vm_number_cpus }}"
+      num_cpu_cores_per_socket: "{{ vm_number_cpu_cores_per_socket }}"
+    
+    #cdrom:
+    #  type: "none"
+
+    networks:
+      # network card 1
+    - name: "{{ vm_net1_name }}"    
+      ip: "{{ vm_net1_ip_address }}"
+      netmask: "{{ vm_net1_subnet_mask }}"
+      gateway: "{{ vm_net1_gateway_ip }}"    
+      type: "{{ vm_net1_network_type }}"
+      device_type: "{{ vm_net1_network_device_type }}"
+      start_connected: True
+      allow_guest_control: True
+      dns_servers: "{{ vm_dns_servers }}"
+
+      # network card 2
+    - name: "{{ vm_net2_name }}"    
+      ip: "{{ vm_net2_ip_address }}"
+      netmask: "{{ vm_net2_subnet_mask }}"
+      gateway: "{{ vm_net2_gateway_ip }}"    
+      type: "{{ vm_net2_network_type }}"
+      device_type: "{{ vm_net2_network_device_type }}"
+      start_connected: True
+      allow_guest_control: True
+      dns_servers: "{{ vm_dns_servers }}"
+
+  tags: deploytemplatedvm
+  delegate_to: localhost
+  register: vmcreated
+
+- name: Check VM Creation Log
+  debug:
+    msg: "{{ vmcreated }}"

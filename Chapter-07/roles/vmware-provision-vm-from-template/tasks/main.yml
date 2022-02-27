@@ -1,0 +1,8 @@
+---
+# tasks file for vmware-provision-vm-from-template
+- name: Check VM exist or not
+  include_tasks: vmware-provisioning-pre-check.yaml
+
+- name: Provision VM
+  include_tasks: vmware-provisioning-task.yaml
+  #when: vm_check.failed

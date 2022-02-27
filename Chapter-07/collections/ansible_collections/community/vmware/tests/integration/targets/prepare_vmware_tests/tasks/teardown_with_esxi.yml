@@ -1,0 +1,94 @@
+---
+- name: Collect the list of the existing VM
+  vmware.vmware_rest.vcenter_vm_info:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+  register: existing_vms
+  until: existing_vms is not failed
+
+- name: Turn off the VM
+  vmware.vmware_rest.vcenter_vm_power:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+    state: stop
+    vm: '{{ item.vm }}'
+  with_items: "{{ existing_vms.value }}"
+  ignore_errors: true
+
+- name: Delete the VMs
+  vmware.vmware_rest.vcenter_vm:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+    state: absent
+    vm: '{{ item.vm }}'
+  with_items: "{{ existing_vms.value }}"
+  when:
+    - not item.name.startswith("vCLS")
+
+
+- name: Build a list of local libraries
+  vmware.vmware_rest.content_locallibrary_info:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+  register: result
+  retries: 100
+  delay: 3
+  until: result is not failed
+
+- name: Delete all the local libraries
+  vmware.vmware_rest.content_locallibrary:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+    library_id: "{{ item.id }}"
+    state: absent
+  with_items: "{{ result.value }}"
+
+- name: Build a list of subscribed libraries
+  vmware.vmware_rest.content_subscribedlibrary_info:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+  register: result
+
+- name: Delete all the subscribed libraries
+  vmware.vmware_rest.content_subscribedlibrary:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+    library_id: "{{ item.id }}"
+    state: absent
+  with_items: "{{ result.value }}"
+
+- name: Get a list of all the datacenters
+  vmware.vmware_rest.vcenter_datacenter_info:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+  register: existing_datacenters
+- name: Force delete the existing DC
+  vmware.vmware_rest.vcenter_datacenter:
+    vcenter_hostname: '{{ vcenter_hostname }}'
+    vcenter_username: '{{ vcenter_username }}'
+    vcenter_password: '{{ vcenter_password }}'
+    vcenter_validate_certs: false
+    state: absent
+    datacenter: '{{ item.datacenter }}'
+    force: true
+  with_items: "{{ existing_datacenters.value }}"
+  until: _result is succeeded
+  retries: 10
+  delay: 1
+  register: _result
