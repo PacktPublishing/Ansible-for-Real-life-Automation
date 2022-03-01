@@ -1,0 +1,20 @@
+botocore
+boto3
+boto
+
+python-dateutil # Used by ec2_asg_scheduled_action
+
+coverage==4.5.4
+placebo
+mock
+pytest-xdist
+# We should avoid these two modules with py3
+pytest-mock
+# Needed for ansible.utils.ipaddr in tests
+netaddr
+# Sometimes needed where we don't have features we need in modules
+awscli
+# Used for comparing SSH Public keys to the Amazon fingerprints
+pycrypto
+# Used by ec2_win_password
+cryptography

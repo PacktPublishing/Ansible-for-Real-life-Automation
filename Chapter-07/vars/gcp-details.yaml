@@ -1,0 +1,6 @@
+gcp_auth_kind: serviceaccount
+gcp_service_account_email: ansible-demo@ansible-automation-demo.iam.gserviceaccount.com
+gcp_service_account_file: ~/.config/ansible-automation-demo-bce5e5cf69d0.json
+gcp_project: ansible-automation-demo
+gcp_scopes: 
+  - https://www.googleapis.com/auth/compute

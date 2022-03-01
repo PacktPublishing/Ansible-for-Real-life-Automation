@@ -1,0 +1,50 @@
+---
+- name: Provision AWS Infrastructure
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  vars_files:
+    - vars/aws-ec2-new.yml
+    - vars/aws-common-vars.yml
+  vars:
+    aws_boto_profile: ansible
+  tasks:
+    - name: Fetch VPC ID
+      include_role:
+        name: aws-get-vpc-details
+
+    - name: Create Security Group
+      include_role:
+        name: aws-create-sg
+      tags: sgcreate
+    
+    - name: Create Keypair
+      include_role:
+        name: aws-create-keypair
+      tags: keycreate
+    
+    - name: Create ELB
+      include_role:
+        name: aws-create-elb
+      tags: elbcreate  
+
+    - name: Create ec2 instances
+      include_role:
+        name: aws-create-ec2
+      tags: ec2create
+
+- name: Deploy Webserver to EC2 instances
+  hosts: ec2webservers
+  remote_user: ec2-user
+  become: true
+  tasks:
+    - name: Deploy Web service
+      include_role: 
+        name: deploy-web-server
+
+- name: IaC Summary
+  hosts: localhost
+  tasks:
+    - debug:
+        msg: "Website is accessible on Appication ELB: {{ elb_public_dns }} (It may take some time to get the backend instance to come InService)"
+ 

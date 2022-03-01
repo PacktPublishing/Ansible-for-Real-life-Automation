@@ -1,0 +1,24 @@
+# inventory names shortened down to fit resource name length limits
+[tests]
+# processor feature tests
+processor
+# restore instance tests
+restore
+# security groups db tests
+sgroups
+# modify complex tests
+complex
+# other tests
+states
+modify
+tagging
+replica
+upgrade
+
+# TODO: uncomment after adding rds_cluster module
+# aurora
+
+
+[all:vars]
+ansible_connection=local
+ansible_python_interpreter="{{ ansible_playbook_python }}"

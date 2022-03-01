@@ -1,0 +1,14 @@
+---
+- module_defaults:
+    group/aws:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      security_token: "{{ security_token | default(omit) }}"
+      region: "{{ aws_region }}"
+  collections:
+    - amazon.aws
+
+  block:
+  - include_tasks: 'basic.yml'
+  # Permissions missing
+  #- include_tasks: 'rotation.yml'

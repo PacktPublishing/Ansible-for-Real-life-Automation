@@ -1,0 +1,22 @@
+---
+- module_defaults:
+    group/aws:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      security_token: "{{ security_token | default(omit) }}"
+      region: "{{ aws_region }}"
+  block:
+    - name: Find AMI to use
+      ec2_ami_info:
+        owners: 'amazon'
+        filters:
+          name: '{{ ec2_ami_name }}'
+      register: ec2_amis
+    - set_fact:
+        ec2_ami_image: '{{ ec2_amis.images[0].image_id }}'
+
+    - include_tasks: cpu_options.yml
+    - include_tasks: iam_instance_role.yml
+    - include_tasks: versions.yml
+    - include_tasks: instance-metadata.yml
+    - include_tasks: network_interfaces.yml

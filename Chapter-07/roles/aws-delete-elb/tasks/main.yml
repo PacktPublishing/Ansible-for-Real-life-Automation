@@ -1,0 +1,10 @@
+---
+# tasks file for aws-delete-elb
+
+- name: Remove Amazon ELB
+  amazon.aws.ec2_elb_lb:
+    profile: "{{ aws_boto_profile }}"
+    name: "{{ aws_elb_app_lb }}"
+    region: "{{ aws_region }}"
+    state: absent
+    wait: yes

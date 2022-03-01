@@ -1,0 +1,21 @@
+---
+# tasks file for aws-create-elb
+- name: Create Amazon ELB
+  amazon.aws.ec2_elb_lb:
+    profile: "{{ aws_boto_profile }}"
+    name: "{{ aws_elb_app_lb }}"
+    region: "{{ aws_region }}"
+    zones:
+      - "{{ ap_zone1 }}"
+      - "{{ ap_zone2 }}"
+    listeners:
+      - protocol: http
+        load_balancer_port: 80
+        instance_port: 80
+        proxy_protocol: True
+    state: present
+  register: elbcreated
+
+- name: Collect ELB Public DNS
+  ansible.builtin.set_fact:
+    elb_public_dns: "{{ elbcreated.elb.dns_name }}"

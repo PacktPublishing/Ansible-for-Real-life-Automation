@@ -5,7 +5,6 @@
   become: no
   connection: local   
   vars_files:
-    - vars/vmware-vm-list.yaml      # list of VM's to create
     - vars/common-vars.yml          # other common variables
     - vars/vmware-credential.yaml   # vcenter credential
   tasks:

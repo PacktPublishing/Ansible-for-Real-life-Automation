@@ -1,0 +1,6 @@
+---
+# defaults file for aws_codebuild
+
+# IAM role names have to be less than 64 characters
+# we hash the resource_prefix to get a shorter, unique string
+iam_role_name: "ansible-test-{{ tiny_prefix }}-codebuild-service-role"

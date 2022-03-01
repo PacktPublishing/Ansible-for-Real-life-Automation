@@ -1,0 +1,36 @@
+---
+- name: Destroy AWS Infrastructure
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  vars_files:
+    - vars/aws-ec2-new.yml
+    - vars/aws-common-vars.yml
+  vars:
+    aws_boto_profile: ansible
+  tasks:
+    - name: Fetch VPC ID
+      include_role:
+        name: aws-get-vpc-details
+
+    - name: Delete ec2 instances
+      include_role:
+        name: aws-delete-ec2
+      tags: ec2delete
+    
+    - name: Delete App ELB
+      include_role:
+        name: aws-delete-elb
+      tags: elbdelete
+
+    - name: Delete Keypair
+      include_role:
+        name: aws-delete-keypair
+      tags: keydelete
+
+    - name: Delete Security Group
+      include_role:
+        name: aws-delete-sg
+      tags: sgdelete
+
+  
