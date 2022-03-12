@@ -1,0 +1,123 @@
+# Test code for the vmware_category Operations.
+# Copyright: (c) 2019, Abhijeet Kasurde <akasurde@redhat.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Define required data
+  set_fact:
+    cat_data:
+    - name: 'Folder'
+      result: 'Folder'
+    - name: 'Cluster'
+      result: 'ClusterComputeResource'
+    - name: Datacenter
+      result: Datacenter
+    - name: Datastore
+      result: Datastore
+    - name: 'Datastore Cluster'
+      result: 'StoragePod'
+    - name: 'Distributed Port Group'
+      result: 'DistributedVirtualPortgroup'
+    - name: 'Distributed Switch'
+      result: 'VmwareDistributedVirtualSwitch'
+    - name: 'Host'
+      result: 'HostSystem'
+    - name: 'Content Library'
+      result: 'com.vmware.content.Library'
+    - name: 'Library item'
+      result: 'com.vmware.content.library.Item'
+    - name: 'Network'
+      result: 'Network'
+    - name: 'Host Network'
+      result: 'HostNetwork'
+    - name: 'Opaque Network'
+      result: 'OpaqueNetwork'
+    - name: 'Resource Pool'
+      result: 'ResourcePool'
+    - name: 'vApp'
+      result: 'VirtualApp'
+    - name: 'Virtual Machine'
+      result: 'VirtualMachine'
+
+- include_tasks: associable_obj_test.yml
+  vars:
+    category_name: "{{ item.name }}"
+    expected_result: "{{ item.result }}"
+  with_items: "{{ cat_data }}"
+
+- name: Delete different types of category with associable object types
+  vmware_category:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    category_name: '{{ item.name }}'
+    state: absent
+  with_items: "{{ cat_data }}"
+
+- name: Create category with 2 associable object types
+  vmware_category:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    category_name: 'Sample_cate_0001'
+    category_description: 'sample description'
+    associable_object_types:
+    - Datastore
+    - Cluster
+    state: present
+  register: category_change
+
+- name: Assert change is made
+  assert:
+    that:
+      - category_change.changed
+
+- name: Delete category with 2 associable object types
+  vmware_category:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    category_name: 'Sample_cate_0001'
+    state: absent
+  register: category_change
+
+- name: Assert change is made
+  assert:
+    that:
+      - category_change.changed
+
+# Added the test for the PR(https://github.com/ansible-collections/community.vmware/pull/990)
+- name: Create a new category with All objects
+  vmware_category:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    category_name: 'Sample_cate_0002'
+    category_description: 'sample description'
+    associable_object_types:
+      - All objects
+    state: present
+  register: category_change_all_objects
+
+- name: Assert change is made
+  assert:
+    that:
+      - category_change_all_objects.changed
+
+- name: Delete Sample_cate_0002 category
+  vmware_category:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    category_name: 'Sample_cate_0002'
+    state: absent
+  register: category_change
+
+- name: Assert change is made
+  assert:
+    that:
+      - category_change.changed

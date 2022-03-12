@@ -1,0 +1,14 @@
+---
+- name: set up elb_target test prerequisites
+  module_defaults:
+    group/aws:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      security_token: "{{ security_token | default(omit) }}"
+      region: "{{ aws_region }}"
+  collections:
+    - community.general
+    - amazon.aws
+  block:
+    - include_tasks: ec2_target.yml
+    - include_tasks: lambda_target.yml

@@ -1,0 +1,7 @@
+---
+# defaults file for vmware-provision-vm-from-template
+vcenter_hostname: vcenter.lab.local
+vmware_datacenter: DC1
+vmware_cluster_name: AZ1
+#vm_template_name: "template-name"
+#vm_base_profile: "profile-name"

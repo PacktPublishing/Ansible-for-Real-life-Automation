@@ -1,0 +1,21 @@
+---
+# tasks file for aws-create-targetgrp
+
+# Create a target group with a default health check
+- name: Create Amazon ELB
+  amazon.aws.ec2_elb_lb:
+    profile: "{{ aws_boto_profile }}"
+    name: "{{ aws_elb_app_lb }}"
+    region: "{{ aws_region }}"
+    zones:
+      - "{{ ap_zone1 }}"
+      - "{{ ap_zone2 }}"
+    listeners:
+      - protocol: http
+        load_balancer_port: 80
+        instance_port: 80
+        proxy_protocol: True
+    #port: 80
+    #vpc_id: "{{ aws_vpc_id }}"
+    state: present
+    #scheme: internal

@@ -1,0 +1,13 @@
+---
+# list of ec2 instances
+ec2_new_list:
+  aws_web_101:
+    name: AWS_WEB_101
+    key_name: "{{ aws_demo_key }}"
+    group: SG-Ansible-Demo
+    instance_type: t2.micro
+  aws_web_102:
+    name: AWS_WEB_102
+    key_name: "{{ aws_demo_key }}"
+    group: SG-Ansible-Demo
+    instance_type: t2.micro

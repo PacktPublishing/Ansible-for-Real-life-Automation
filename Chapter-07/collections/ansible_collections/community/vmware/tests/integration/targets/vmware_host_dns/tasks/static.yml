@@ -1,0 +1,223 @@
+- name: Tests when the hosts have a static DNS config
+  block:
+    # Testcase 0001: Ensure DNS config directly on the host is idempotent for static
+    - name: Ensure static DNS config is idempotent when done directly on the host
+      vmware_host_dns:
+        hostname: '{{ esxi1 }}'
+        username: '{{ esxi_user }}'
+        password: '{{ esxi_password }}'
+        validate_certs: false
+        type: 'static'
+        host_name: "{{ dns['results'][0]['hosts_dns_info'][esxi1]['host_name'] }}"
+      register: vmware_host_dns_result_0001
+    - name: Ensure DNS config wasn't changed
+      assert:
+        that:
+          - vmware_host_dns_result_0001 is not changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0002: Ensure changing the hostname directly on the host works
+    - name: Ensure changing the hostname directly on the host works
+      vmware_host_dns:
+        hostname: '{{ esxi1 }}'
+        username: '{{ esxi_user }}'
+        password: '{{ esxi_password }}'
+        validate_certs: false
+        type: 'static'
+        host_name: newname
+      register: vmware_host_dns_result_0002
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0002 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0003: Ensure changing the domain directly on the host works
+    - name: Ensure changing the domain directly on the host works
+      vmware_host_dns:
+        hostname: '{{ esxi1 }}'
+        username: '{{ esxi_user }}'
+        password: '{{ esxi_password }}'
+        validate_certs: false
+        type: 'static'
+        domain: new.domain
+      register: vmware_host_dns_result_0003
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0003 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0004: Ensure changing the DNS servers directly on the host works
+    - name: Ensure changing the domain directly on the host works
+      vmware_host_dns:
+        hostname: '{{ esxi1 }}'
+        username: '{{ esxi_user }}'
+        password: '{{ esxi_password }}'
+        validate_certs: false
+        type: 'static'
+        dns_servers:
+          - 1.2.3.4
+          - 5.6.7.8
+      register: vmware_host_dns_result_0004
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0004 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0005: Ensure changing the search domain directly on the host works
+    - name: Ensure changing the domain directly on the host works
+      vmware_host_dns:
+        hostname: '{{ esxi1 }}'
+        username: '{{ esxi_user }}'
+        password: '{{ esxi_password }}'
+        validate_certs: false
+        type: 'static'
+        search_domains:
+          - subdomain.example.local
+          - example.local
+      register: vmware_host_dns_result_0005
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0005 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0006: Ensure DNS config on the cluster is idempotent for static
+    - name: Apply configuration on a cluster
+      vmware_host_dns:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        cluster_name: "{{ ccr1 }}"
+        validate_certs: false
+        type: 'static'
+        search_domains: "different-search-domain"
+      register: vmware_host_dns_result_0006
+
+    - name: Ensure configuration has changed
+      assert:
+        that:
+          - vmware_host_dns_result_0006 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0007: Ensure changing the domain on the cluster works
+    - name: Ensure changing the domain on the cluster works
+      vmware_host_dns:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        cluster_name: "{{ ccr1 }}"
+        validate_certs: false
+        type: 'static'
+        domain: new.domain
+      register: vmware_host_dns_result_0007
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0007 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0008: Ensure changing the DNS servers on the cluster works
+    - name: Ensure changing the DNS servers on the cluster works
+      vmware_host_dns:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        cluster_name: "{{ ccr1 }}"
+        validate_certs: false
+        type: 'static'
+        dns_servers:
+          - 1.2.3.4
+          - 5.6.7.8
+      register: vmware_host_dns_result_0008
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0008 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    # Testcase 0009: Ensure changing the search domains on the cluster works
+    - name: Ensure changing the search domains on the cluster works
+      vmware_host_dns:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        cluster_name: "{{ ccr1 }}"
+        validate_certs: false
+        type: 'static'
+        search_domains:
+          - subdomain.example.local
+          - example.local
+      register: vmware_host_dns_result_0009
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0009 is changed
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+    - name: Remove all the DNS servers
+      vmware_host_dns:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        cluster_name: "{{ ccr1 }}"
+        validate_certs: false
+        type: 'static'
+        dns_servers: []
+      register: vmware_host_dns_result_0010
+
+    - name: Ensure DNS config was changed
+      assert:
+        that:
+          - vmware_host_dns_result_0010 is changed
+
+    - name: Remove the domain
+      vmware_host_dns:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        cluster_name: "{{ ccr1 }}"
+        validate_certs: false
+        type: 'static'
+        domain: ''
+      register: vmware_host_dns_result_0011
+
+    - name: Ensure the server has no domain
+      assert:
+        that:
+          - vmware_host_dns_result_0011 is changed
+
+
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml
+
+  always:
+    - name: Revert to original DNS configuration
+      include_tasks: teardown.yaml

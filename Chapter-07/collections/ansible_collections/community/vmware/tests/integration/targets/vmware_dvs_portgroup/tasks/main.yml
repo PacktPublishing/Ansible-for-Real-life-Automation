@@ -1,0 +1,800 @@
+# Test code for the vmware_dvs_portgroup module.
+# Copyright: (c) 2017, Philippe Dellaert <philippe@dellaert.org>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- import_role:
+    name: prepare_vmware_tests
+  vars:
+    setup_dvswitch: true
+
+- name: create basic portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0001
+
+- debug:
+    var: dvs_pg_result_0001
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - dvs_pg_result_0001.changed
+
+- when: vcsim is not defined
+  block:
+    - name: enable MAC learning
+      vmware_dvs_portgroup:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        switch_name: "{{ dvswitch1 }}"
+        portgroup_name: "basic"
+        vlan_id: 0
+        num_ports: 32
+        port_binding: static
+        mac_learning:
+          enabled: true
+        state: present
+      register: enable_mac_learning_result
+
+    - debug:
+        var: enable_mac_learning_result
+
+    - name: ensure MAC learning is enabled
+      assert:
+        that:
+            - enable_mac_learning_result.changed
+
+    - name: enable MAC learning again (idempotency)
+      vmware_dvs_portgroup:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        switch_name: "{{ dvswitch1 }}"
+        portgroup_name: "basic"
+        vlan_id: 0
+        num_ports: 32
+        port_binding: static
+        mac_learning:
+          enabled: true
+        state: present
+      register: enable_mac_learning_again_result
+
+    - debug:
+        var: enable_mac_learning_again_result
+
+    - name: ensure MAC learning is not enabled again
+      assert:
+        that:
+            - not enable_mac_learning_again_result.changed
+
+    - name: disable MAC learning
+      vmware_dvs_portgroup:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        switch_name: "{{ dvswitch1 }}"
+        portgroup_name: "basic"
+        vlan_id: 0
+        num_ports: 32
+        port_binding: static
+        mac_learning:
+          enabled: false
+        state: present
+      register: disable_mac_learning_result
+
+    - debug:
+        var: disable_mac_learning_result
+
+    - name: ensure MAC learning is disabled
+      assert:
+        that:
+            - disable_mac_learning_result.changed
+
+    - name: disable MAC learning again (idempotency)
+      vmware_dvs_portgroup:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        switch_name: "{{ dvswitch1 }}"
+        portgroup_name: "basic"
+        vlan_id: 0
+        num_ports: 32
+        port_binding: static
+        mac_learning:
+          enabled: false
+        state: present
+      register: disable_mac_learning_again_result
+
+    - debug:
+        var: disable_mac_learning_again_result
+
+    - name: ensure MAC learning is not disabled again
+      assert:
+        that:
+            - not disable_mac_learning_again_result.changed
+
+- name: create basic VLAN portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-vlan10"
+    vlan_id: 10
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0002
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - dvs_pg_result_0002.changed
+
+- name: create basic trunk portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-trunk"
+    vlan_id: 1-4094
+    vlan_trunk: true
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0003
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - dvs_pg_result_0003.changed
+
+- name: create basic portgroup again
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0004
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - not dvs_pg_result_0004.changed
+
+- name: create basic portgroup with all security and policy settings enabled
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-all-enabled"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: present
+    network_policy:
+      promiscuous: true
+      forged_transmits: true
+      mac_changes: true
+    port_policy:
+      block_override: true
+      ipfix_override: true
+      live_port_move: true
+      network_rp_override: true
+      port_config_reset_at_disconnect: true
+      security_override: true
+      shaping_override: true
+      traffic_filter_override: true
+      uplink_teaming_override: true
+      vendor_config_override: true
+      vlan_override: true
+  register: dvs_pg_result_0005
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - dvs_pg_result_0005.changed
+
+- name: create basic portgroup with some security and policy settings enabled
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-some-enabled"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: present
+    network_policy:
+      promiscuous: true
+      forged_transmits: true
+      mac_changes: false
+    port_policy:
+      vlan_override: true
+  register: dvs_pg_result_0006
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - dvs_pg_result_0006.changed
+
+- name: Change forged_transmits to no
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-some-enabled"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: present
+    network_policy:
+      promiscuous: true
+      forged_transmits: false
+      mac_changes: false
+    port_policy:
+      vlan_override: true
+  register: dvs_pg_result_0007
+
+- name: ensure forged_transmits is changed
+  assert:
+    that:
+        - dvs_pg_result_0007.changed
+
+- name: Change vlan_override to no
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-some-enabled"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: present
+    network_policy:
+      promiscuous: true
+      forged_transmits: false
+      mac_changes: false
+    port_policy:
+      vlan_override: false
+  register: dvs_pg_result_0008
+
+- name: ensure vlan_override is changed
+  assert:
+    that:
+        - dvs_pg_result_0008.changed
+
+- name: Change num_ports to 16
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-some-enabled"
+    vlan_id: 0
+    num_ports: 16
+    port_binding: static
+    state: present
+    network_policy:
+      promiscuous: true
+      forged_transmits: false
+      mac_changes: false
+    port_policy:
+      vlan_override: false
+  register: dvs_pg_result_0009
+
+- name: ensure vlan_override is changed
+  assert:
+    that:
+        - dvs_pg_result_0009.changed
+
+- name: Change portgroup to ephemeral
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-some-enabled"
+    vlan_id: 0
+    num_ports: 16
+    port_binding: ephemeral
+    state: present
+    network_policy:
+      promiscuous: true
+      forged_transmits: false
+      mac_changes: false
+    port_policy:
+      vlan_override: false
+  register: dvs_pg_result_0010
+
+- name: ensure vlan_override is changed
+  assert:
+    that:
+        - dvs_pg_result_0010.changed
+
+- name: delete basic portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: absent
+  register: dvs_pg_result_0011
+
+- name: ensure dvs portgroup is removed
+  assert:
+    that:
+        - dvs_pg_result_0011.changed
+
+- name: delete basic portgroup again
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic"
+    vlan_id: 0
+    num_ports: 32
+    port_binding: static
+    state: absent
+  register: dvs_pg_result_0012
+
+- name: ensure dvs portgroup is removed
+  assert:
+    that:
+        - not dvs_pg_result_0012.changed
+
+- name: Check valid VLAN id range in DVS Portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic_trunk_0001"
+    vlan_id: 1-4096
+    vlan_trunk: true
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0013
+  ignore_errors: true
+
+- name: Ensure module fails for invalid VLAN id
+  assert:
+    that:
+        - not dvs_pg_result_0013.changed
+        - "'vlan_id range 1-4096 specified is incorrect. The valid vlan_id range is from 0 to 4094.' == '{{ dvs_pg_result_0013.msg }}'"
+
+- name: Change VLAN on basic VLAN portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-vlan10"
+    vlan_id: 20
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0014
+
+- name: ensure dvs portgroup is changed
+  assert:
+    that:
+        - dvs_pg_result_0014.changed
+
+- name: Change VLAN range on basic trunk portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "basic-trunk"
+    vlan_id: 1000-2000
+    vlan_trunk: true
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0015
+
+- name: ensure dvs portgroup is changed
+  assert:
+    that:
+        - dvs_pg_result_0015.changed
+
+- name: create complex trunk portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "complex-trunk"
+    vlan_id: 1-1000, 1005, 1100-1200
+    vlan_trunk: true
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0016
+
+- name: ensure dvs portgroup is present
+  assert:
+    that:
+        - dvs_pg_result_0016.changed
+
+- name: change complex trunk portgroup
+  vmware_dvs_portgroup:
+    validate_certs: false
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    switch_name: "{{ dvswitch1 }}"
+    portgroup_name: "complex-trunk"
+    vlan_id: 1-1000, 1006, 1100-1200
+    vlan_trunk: true
+    num_ports: 32
+    port_binding: static
+    state: present
+  register: dvs_pg_result_0017
+
+- name: ensure dvs portgroup is changed
+  assert:
+    that:
+        - dvs_pg_result_0017.changed
+
+- name: Check fail for missing PVLAN in dvs
+  vmware_dvs_portgroup:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    portgroup_name: private-vlan-portgroup
+    switch_name: "{{ dvswitch1 }}"
+    vlan_id: 10
+    vlan_private: true
+    num_ports: 12
+    port_binding: static
+    state: present
+    validate_certs: false
+  register: dvs_pg_result_0018
+  ignore_errors: true
+
+- name: Ensure module fails for missing private VLAN in dvs
+  assert:
+    that:
+        - not dvs_pg_result_0018.changed
+        - "'No private vlan with id 10 in distributed vSwitch {{ dvswitch1 }}' == '{{ dvs_pg_result_0018.msg }}'"
+
+- when: vcsim is not defined
+  block:
+    - name: add distributed vSwitch
+      vmware_dvswitch:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        datacenter_name: "{{ dc1 }}"
+        state: present
+        switch_name: dvswitch_0001
+        mtu: 9000
+        uplink_quantity: 2
+        discovery_proto: lldp
+        discovery_operation: both
+      register: dvs_result_0001
+
+    - name: ensure distributed vswitch is present
+      assert:
+        that:
+            - dvs_result_0001 is changed
+
+    - name: Configure PVLANs to test PVLAN dpg
+      vmware_dvswitch_pvlans:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        switch: dvswitch_0001
+        primary_pvlans:
+          - primary_pvlan_id: 1
+        secondary_pvlans:
+          - primary_pvlan_id: 1
+            secondary_pvlan_id: 2
+            pvlan_type: isolated
+        validate_certs: false
+      register: pvlans_result
+
+    - name: ensure pvlans were configured
+      assert:
+        that:
+          - pvlans_result is not failed
+
+    - name: Create private vlan portgroup
+      vmware_dvs_portgroup:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        portgroup_name: private-vlan-portgroup
+        switch_name: dvswitch_0001
+        vlan_id: 1
+        vlan_private: true
+        num_ports: 12
+        port_binding: static
+        state: present
+        validate_certs: false
+      register: dvs_pg_result_0019
+
+    - name: ensure dvs portgroup with pvlan is present
+      assert:
+        that:
+            - dvs_pg_result_0019.changed
+
+    - name: Change private vlan id
+      vmware_dvs_portgroup:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        portgroup_name: private-vlan-portgroup
+        switch_name: dvswitch_0001
+        vlan_id: 2
+        vlan_private: true
+        num_ports: 12
+        port_binding: static
+        state: present
+        validate_certs: false
+      register: dvs_pg_result_0020
+
+    - name: ensure dvs portgroup pvlan id is changed
+      assert:
+        that:
+            - dvs_pg_result_0020.changed
+
+    - name: Change private vlan to basic vlan portgroup
+      vmware_dvs_portgroup:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        portgroup_name: private-vlan-portgroup
+        switch_name: dvswitch_0001
+        vlan_id: 5
+        num_ports: 12
+        port_binding: static
+        state: present
+        validate_certs: false
+      register: dvs_pg_result_0021
+
+    - name: ensure dvs portgroup type changed
+      assert:
+        that:
+            - dvs_pg_result_0021.changed
+  always:
+    - name: delete distributed vSwitch
+      vmware_dvswitch:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        datacenter_name: "{{ dc1 }}"
+        state: absent
+        switch_name: dvswitch_0001
+      register: dvs_result_0001
+
+    - name: Integration test a dvPortGroup name with special characters
+      block:
+        - name: Create dvSwitch with special characters
+          vmware_dvswitch:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: false
+            datacenter: "{{ dc1 }}"
+            switch: 'dvSwitch\/%'
+            version: 6.5.0
+            mtu: 9000
+            uplink_quantity: 1
+            state: present
+          register: create_dvswitch_with_special_characters_result
+
+        - assert:
+            that:
+              - create_dvswitch_with_special_characters_result.changed is sameas true
+
+        - name: Create dvPortGroup with special characters
+          vmware_dvs_portgroup:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: false
+            switch_name: 'dvSwitch\/%'
+            portgroup_name: 'dvportgroup\/%'
+            vlan_id: 1
+            num_ports: 8
+            port_binding: static
+            state: present
+          register: create_dvportgroup_with_special_characters_result
+
+        - assert:
+            that:
+              - create_dvportgroup_with_special_characters_result.changed is sameas true
+
+        - name: Create dvPortGroup with special characters(idempotency check)
+          vmware_dvs_portgroup:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: false
+            switch_name: 'dvSwitch\/%'
+            portgroup_name: 'dvportgroup\/%'
+            vlan_id: 1
+            num_ports: 8
+            port_binding: static
+            state: present
+          register: create_dvportgroup_with_special_characters_idempotency_check_result
+
+        - assert:
+            that:
+              - create_dvportgroup_with_special_characters_idempotency_check_result.changed is sameas false
+
+        - name: Delete dvPortGroup with special characters
+          vmware_dvs_portgroup:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: false
+            switch_name: 'dvSwitch\/%'
+            portgroup_name: 'dvportgroup\/%'
+            vlan_id: 1
+            num_ports: 8
+            port_binding: static
+            state: absent
+          register: delete_dvportgroup_with_special_characters_result
+
+        - assert:
+            that:
+              - delete_dvportgroup_with_special_characters_result.changed is sameas true
+
+        - name: Delete dvPortGroup with special characters(idempotency check)
+          vmware_dvs_portgroup:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: false
+            switch_name: 'dvSwitch\/%'
+            portgroup_name: 'dvportgroup\/%'
+            vlan_id: 1
+            num_ports: 8
+            port_binding: static
+            state: absent
+          register: delete_dvportgroup_with_special_characters_idempotency_check_result
+
+        - assert:
+            that:
+              - delete_dvportgroup_with_special_characters_idempotency_check_result.changed is sameas false
+
+        - name: Delete dvSwitch with special characters
+          vmware_dvswitch:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: false
+            datacenter: "{{ dc1 }}"
+            switch: 'dvSwitch\/%'
+            version: 6.5.0
+            mtu: 9000
+            uplink_quantity: 1
+            state: absent
+          register: delete_dvswitch_with_special_characters_result
+
+        - assert:
+            that:
+              - delete_dvswitch_with_special_characters_result.changed is sameas true
+
+    # https://github.com/ansible-collections/community.vmware/issues/637
+    # The test if the vmware_dvs_portgroup has the idempotency when it is configured the multiple VLAN.
+    - name: Create the test dvs port group for the issues 637
+      vmware_dvs_portgroup:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        portgroup_name: "dvpg637"
+        switch_name: "{{ dvswitch1 }}"
+        vlan_id: "1500,1501"
+        vlan_trunk: true
+        num_ports: 120
+        port_binding: static
+        network_policy:
+          promiscuous: false
+          forged_transmits: true
+          mac_changes: true
+        state: present
+      register: create_test_dvs_port_group_issues_637_result
+
+    - assert:
+        that:
+          - create_test_dvs_port_group_issues_637_result.changed is sameas true
+
+    - name: Create the test dvs port group for the issues 637(idempotency check)
+      vmware_dvs_portgroup:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        portgroup_name: "dvpg637"
+        switch_name: "{{ dvswitch1 }}"
+        vlan_id: "1500,1501"
+        vlan_trunk: true
+        num_ports: 120
+        port_binding: static
+        network_policy:
+          promiscuous: false
+          forged_transmits: true
+          mac_changes: true
+        state: present
+      register: create_test_dvs_port_group_issues_637_idempotency_check_result
+
+    - assert:
+        that:
+          - create_test_dvs_port_group_issues_637_idempotency_check_result.changed is sameas false
+
+    - name: Delete the test dvs port group for the issues 637
+      vmware_dvs_portgroup:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        portgroup_name: "dvpg637"
+        switch_name: "{{ dvswitch1 }}"
+        vlan_id: "1500,1501"
+        vlan_trunk: true
+        num_ports: 120
+        port_binding: static
+        network_policy:
+          promiscuous: false
+          forged_transmits: true
+          mac_changes: true
+        state: absent
+      register: delete_test_dvs_port_group_issues_637_idempotency_check_result
+
+    - assert:
+        that:
+          - delete_test_dvs_port_group_issues_637_idempotency_check_result.changed is sameas true

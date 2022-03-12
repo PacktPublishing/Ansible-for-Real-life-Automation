@@ -1,0 +1,15 @@
+---
+- name: 'ecs_cluster integration tests'
+  collections:
+    - amazon.aws
+  module_defaults:
+    group/aws:
+      aws_access_key: '{{ aws_access_key }}'
+      aws_secret_key: '{{ aws_secret_key }}'
+      security_token: '{{ security_token | default(omit) }}'
+      region: '{{ aws_region }}'
+  block:
+
+    - include_tasks: network_force_new_deployment.yml
+    - include_tasks: force_service_deletion.yml
+    - include_tasks: full_test.yml

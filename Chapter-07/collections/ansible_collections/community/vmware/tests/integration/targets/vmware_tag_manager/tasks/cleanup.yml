@@ -1,0 +1,20 @@
+- name: Delete Tags
+  vmware_tag:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    tag_name: "{{ tag_one }}"
+    category_id: "{{ cat_one_id }}"
+    state: absent
+  register: delete_tag
+
+- name: Delete Categories
+  vmware_category:
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: false
+    category_name: "{{ cat_one }}"
+    state: absent
+  register: delete_categories

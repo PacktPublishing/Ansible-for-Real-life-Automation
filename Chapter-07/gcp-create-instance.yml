@@ -1,0 +1,47 @@
+---
+- name: "Provision new GCP instance"
+  hosts: localhost
+  gather_facts: no
+  become: no
+  connection: local   
+  vars_files:
+    - vars/gcp-details.yaml         # GCP credentials and details
+  tasks:
+    - name: Get info about default VPC network
+      gcp_compute_network_info:
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        filters:
+        - name = default
+      register: default_network_details
+
+    - name: Create a disk with OS
+      google.cloud.gcp_compute_disk:
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        name: demo-disk
+        size_gb: 10
+        source_image: projects/debian-cloud/global/images/family/debian-9
+        zone: us-central1-a
+        state: present
+      register: instance_source_disk
+
+    - name: Create GCP instance
+      google.cloud.gcp_compute_instance:
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        zone: us-central1-a
+        state: present      
+        name: demo-instance
+        machine_type: n1-standard-1
+        disks:
+        - auto_delete: 'true'
+          boot: 'true'
+          source: "{{ instance_source_disk }}"
+        labels:
+          environment: production
+        network_interfaces:
+        - network: "{{ default_network_details.resources[0] }}"
