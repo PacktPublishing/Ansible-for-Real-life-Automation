@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+---
+__mssql_server_packages: mssql-server
+__mssql_client_packages: [mssql-tools, unixODBC-devel]
+__mssql_server_fts_packages: mssql-server-fts
+__mssql_server_ha_packages: mssql-server-ha
+__mssql_powershell_packages: powershell

@@ -1,0 +1,31 @@
+---
+- name: Deploying PostgreSQL Database Server
+  hosts: "{{ NODES }}"
+  become: true
+  vars_files:
+    - vars/postgres.yaml
+  tasks:
+    - name: Install and configure PostgreSQL
+      include_role:
+        name: geerlingguy.postgresql
+
+    - name: Allow remote connection for PostgreSQL
+      ansible.builtin.lineinfile:
+        path: /var/lib/pgsql/data/postgresql.conf
+        regexp: '^listen_addresses'
+        line: "listen_addresses = '*'"
+        insertbefore: '^#port = 5432'
+
+    - name: restart postgresql
+      service:
+        name: postgresql.service 
+        state: restarted
+        sleep: 5
+
+    - name: Allow 5432 port for PostgreSQL on firewall
+      ansible.posix.firewalld:
+        port: 5432/tcp
+        zone: public
+        permanent: yes
+        state: enabled
+        immediate: yes

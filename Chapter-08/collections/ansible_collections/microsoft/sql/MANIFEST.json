@@ -1,0 +1,35 @@
+{
+ "collection_info": {
+  "namespace": "microsoft",
+  "name": "sql",
+  "version": "1.1.0",
+  "authors": [
+   "Sergei Petrosian <spetrosi@redhat.com>"
+  ],
+  "readme": "README.md",
+  "tags": [
+   "mssql",
+   "microsoft",
+   "sql",
+   "database"
+  ],
+  "description": "Ansible collection for Microsoft SQL Server management",
+  "license": [
+   "MIT"
+  ],
+  "license_file": null,
+  "dependencies": {},
+  "repository": "https://github.com/linux-system-roles/mssql",
+  "documentation": "https://github.com/linux-system-roles/mssql/blob/master/README.md",
+  "homepage": null,
+  "issues": "https://github.com/linux-system-roles/mssql/issues"
+ },
+ "file_manifest_file": {
+  "name": "FILES.json",
+  "ftype": "file",
+  "chksum_type": "sha256",
+  "chksum_sha256": "82841a83c53ac808666a3be0d1362ef91eb9e75cde0627431bb60f43b0c31d39",
+  "format": 1
+ },
+ "format": 1
+}

@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that the role installs version 2017 and upgrades to 2019
+  hosts: all
+  vars:
+    mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula: true
+    mssql_accept_microsoft_cli_utilities_for_sql_server_eula: true
+    mssql_accept_microsoft_sql_server_standard_eula: true
+  tasks:
+    - name: Verify the failure when mssql_version is provided incorrectly
+      block:
+        - name: Run the role with incorrect mssql_version
+          include_role:
+            name: microsoft.sql.server
+          vars:
+            mssql_version: 2018
+
+        - name: Unreachable task
+          fail:
+            msg: The above task must fail
+
+      rescue:
+        - name: Assert that the role failed with the correct message
+          assert:
+            that: >-
+              'The mssql_version variable must be set to either 2017 or 2019' in
+              ansible_failed_result.msg
+
+    - name: Verify the failure when mssql_upgrade is provided with version 2017
+      block:
+        - name: Run the role with mssql_version 2017 and mssql_upgrade true
+          include_role:
+            name: microsoft.sql.server
+          vars:
+            mssql_version: 2017
+            mssql_upgrade: true
+
+        - name: Unreachable task
+          fail:
+            msg: The above task must fail
+
+      rescue:
+        - name: Assert that the role failed with the correct message
+          assert:
+            that: >-
+              'You set mssql_upgrade to true and mssql_version to 2017.' in
+              ansible_failed_result.msg.0
+
+    - name: Set up MSSQL 2017
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_version: 2017
+        mssql_password: "p@55w0rD"
+        mssql_edition: Evaluation
+
+    - name: Upgrade to 2019
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_version: 2019
+        mssql_upgrade: yes
+
+    - name: Upgrade again to test idempotency - should report not changed
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_upgrade: true
+        mssql_version: 2019
+
+    - name: >-
+        Verify the failure when mssql_version is set to 2017 when SQL Server has
+        version 2019
+      block:
+        - name: Run the role with mssql_version 2017 on SQL Server 2019
+          include_role:
+            name: microsoft.sql.server
+          vars:
+            mssql_version: "2017"
+
+        - name: Unreachable task
+          fail:
+            msg: The above task must fail
+
+      rescue:
+        - name: Assert that the role failed with the correct message
+          assert:
+            that: >-
+              'set mssql_version to 2017, but your SQL Server is version 2019.'
+              in ansible_failed_result.msg.0

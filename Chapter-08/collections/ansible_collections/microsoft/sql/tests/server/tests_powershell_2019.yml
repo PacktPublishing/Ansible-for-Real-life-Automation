@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that the role install powershell in an idempotent manner
+  hosts: all
+  vars:
+    mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula: true
+    mssql_accept_microsoft_cli_utilities_for_sql_server_eula: true
+    mssql_accept_microsoft_sql_server_standard_eula: true
+  tasks:
+    - name: Run on a fresh host and install powershell
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_password: "p@55w0rD"
+        mssql_edition: Evaluation
+        mssql_install_powershell: true
+
+    - name: Configure the mssql-server service start limit interval and burst
+      include_tasks: tasks/mssql-sever-increase-start-limit.yml
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Run again with the same settings - should report not changed
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_password: "p@55w0rD"
+        mssql_edition: Evaluation
+        mssql_install_powershell: true
+
+    - name: Verify settings
+      include_tasks: tasks/verify_settings.yml
+      vars:
+        __verify_mssql_password: "p@55w0rD"
+        __verify_mssql_edition: Evaluation
+        __verify_mssql_powershell_is_installed: true
+
+    - name: Run to edit settings
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_password: "p@55w0rd"
+        mssql_edition: Standard
+        mssql_install_powershell: false
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Run with the edited settings again - should report not changed
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_password: "p@55w0rd"
+        mssql_edition: Standard
+        mssql_install_powershell: false
+
+    - name: Verify disabled settings
+      include_tasks: tasks/verify_settings.yml
+      vars:
+        __verify_mssql_password: "p@55w0rd"
+        __verify_mssql_edition: Standard
+        __verify_mssql_powershell_is_installed: false

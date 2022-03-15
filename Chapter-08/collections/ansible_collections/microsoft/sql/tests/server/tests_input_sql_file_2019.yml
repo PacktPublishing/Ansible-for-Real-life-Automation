@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that the role can input sql files to MSSQL
+  hosts: all
+  vars:
+    mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula: true
+    mssql_accept_microsoft_cli_utilities_for_sql_server_eula: true
+    mssql_accept_microsoft_sql_server_standard_eula: true
+  tasks:
+    - name: Set up MSSQL and input the sql file
+      include_role:
+        name: microsoft.sql.server
+      vars:
+        mssql_input_sql_file: sql_script.sql
+        mssql_password: "p@55w0rD"
+        mssql_edition: Evaluation
+
+    - name: Verify the failure when the mssql_password var is not specified
+      block:
+        - name: Input the sql file without the mssql_password variable
+          include_role:
+            name: microsoft.sql.server
+          vars:
+            mssql_input_sql_file: sql_script.sql
+
+        - name: Unreachable task
+          fail:
+            msg: The above task must fail
+
+      rescue:
+        - name: Assert that the role failed with mssql_password not defined
+          assert:
+            that: >-
+              'You must define the mssql_password variable' in
+              ansible_failed_result.msg

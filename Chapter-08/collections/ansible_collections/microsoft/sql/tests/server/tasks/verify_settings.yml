@@ -1,0 +1,182 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Verify edition
+  when: __verify_mssql_edition is defined
+  block:
+    - name: Check if the errorlog file exists and its location
+      shell: |
+        set -euo pipefail
+        errorlog="$(grep '^errorlogfile' /var/opt/mssql/mssql.conf \
+        2>&1 | sed 's\errorlogfile : \\')" || :
+        if [ -f "${errorlog}" ]; then
+          echo "${errorlog}"
+        elif [ -f /var/opt/mssql/log/errorlog ]; then
+          echo "/var/opt/mssql/log/errorlog"
+        else
+          echo ""
+        fi
+      changed_when: false
+      register: __mssql_errorlog
+
+    - name: Check if the set edition matches the existing edition
+      shell: |
+        errorlog_edition="$(grep -oi '{{ __verify_mssql_edition }} edition' \
+        {{ __mssql_errorlog.stdout }})"
+        if [ -z "${errorlog_edition}" ]; then
+          edition_matches=false
+        else
+          edition_matches=true
+        fi
+        echo "${edition_matches}"
+      register: __mssql_edition_matches
+      changed_when: false
+
+    - name: Verify if the edition matches
+      assert:
+        that: __mssql_edition_matches.stdout | bool
+
+- name: Verify the IP address setting
+  include_tasks: tasks/mssql_conf_verify.yml
+  vars:
+    __mssql_conf_setting: ipaddress
+    __mssql_conf_value: __mssql_ip_address_matches
+  when: __mssql_ip_address_matches is defined
+
+- name: Verify the TCP port setting
+  include_tasks: tasks/mssql_conf_verify.yml
+  vars:
+    __mssql_conf_setting: tcpport
+    __mssql_conf_value: __mssql_tcp_port_matches
+  when: __mssql_tcp_port_matches is defined
+
+- name: Verify password
+  when: __verify_mssql_password is defined
+  block:
+    - name: Prepare MSSQL and facts for logging in
+      include_role:
+        name: microsoft.sql.server
+        tasks_from: verify_password
+        public: true
+      vars:
+        __mssql_password: "{{ __verify_mssql_password }}"
+
+    - name: Wait for mssql-server to start and prepare for client connections
+      wait_for:
+        path: /var/opt/mssql/log/errorlog
+        search_regex: SQL Server is now ready for client connections
+        delay: 3
+        timeout: 10
+
+    - name: Check if the set password matches the existing password
+      command: "{{ __mssql_sqlcmd_login_cmd }} -Q 'SELECT @@VERSION'"
+      ignore_errors: true
+      changed_when: false
+      register: __mssql_password_query
+
+    - name: Verify if the password matched
+      assert:
+        that: __mssql_password_query is success
+
+- name: Verify that the SQL agent is enabled
+  include_tasks: tasks/mssql_conf_verify.yml
+  vars:
+    __mssql_conf_setting: enabled
+    __mssql_conf_value: "{{ __verify_mssql_agent_is_enabled }}"
+  when: __verify_mssql_agent_is_enabled is defined
+
+- name: Verify the {{ __mssql_server_fts_packages }} package
+  include_tasks: tasks/verify_package.yml
+  vars:
+    __mssql_verify_package_name: "{{ __mssql_server_fts_packages }}"
+    __mssql_verify_package_installed: "{{ __verify_mssql_fts_is_installed }}"
+  when: __verify_mssql_fts_is_installed is defined
+
+- name: Verify the {{ __mssql_powershell_packages }} package
+  include_tasks: tasks/verify_package.yml
+  vars:
+    __mssql_verify_package_name: "{{ __mssql_powershell_packages }}"
+    __mssql_verify_package_installed: >-
+      {{ __verify_mssql_powershell_is_installed }}
+  when: __verify_mssql_powershell_is_installed is defined
+
+- name: Verify the ha settings
+  when: __verify_mssql_ha_is_installed is defined
+  block:
+    - name: Verify if the {{ __mssql_server_ha_packages }} package is installed
+      include_tasks: tasks/verify_package.yml
+      vars:
+        __mssql_verify_package_name: "{{ __mssql_server_ha_packages }}"
+        __mssql_verify_package_installed: "{{ __verify_mssql_ha_is_installed }}"
+
+    - name: Verify the hadrenabled setting
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: hadrenabled
+        __mssql_conf_value: >-
+          {{ true if __verify_mssql_ha_is_installed else false }}
+
+- name: Verify that MSSQL is tuned for FUA
+  when: __verify_mssql_is_tuned_for_fua is defined
+  block:
+    - name: Get the value of the traceflag setting
+      shell: grep '^traceflag' /var/opt/mssql/mssql.conf || true
+      changed_when: false
+      register: __mssql_conf_get_traceflag
+
+    - name: Verify that the traceflag setting is set to 3979
+      assert:
+        that: "'3979' in __mssql_conf_get_traceflag.stdout"
+      when: __verify_mssql_is_tuned_for_fua | bool
+
+    - name: Verify that the traceflag setting is not set to 3979
+      assert:
+        that: "'3979' not in __mssql_conf_get_traceflag.stdout"
+      when: not __verify_mssql_is_tuned_for_fua | bool
+
+  # alternatewritethrough must be false according to MS docs
+    - name: Verify that the alternatewritethrough setting is false
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: alternatewritethrough
+        __mssql_conf_value: false
+
+    - name: Verify the writethrough setting
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: writethrough
+        __mssql_conf_value: >-
+          {{ true if __verify_mssql_is_tuned_for_fua else false }}
+
+- name: Verify that MSSQL configuration for TSL encryption
+  when: __verify_mssql_is_tls_encrypted is defined
+  block:
+    - name: Verify the tlscert setting
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: tlscert
+        __mssql_conf_value: >-
+          {{ mssql_tls_cert | basename if __verify_mssql_is_tls_encrypted
+          else '' }}
+
+    - name: Verify the tlskey setting
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: tlskey
+        __mssql_conf_value: >-
+          {{ mssql_tls_private_key | basename if
+          __verify_mssql_is_tls_encrypted else '' }}
+
+    - name: Verify the tlsprotocols setting
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: tlsprotocols
+        __mssql_conf_value: >-
+          {{ mssql_tls_version | string if
+          __verify_mssql_is_tls_encrypted else '' }}
+
+    - name: Verify the forceencryption setting
+      include_tasks: tasks/mssql_conf_verify.yml
+      vars:
+        __mssql_conf_setting: forceencryption
+        __mssql_conf_value: >-
+          {{ true if __verify_mssql_is_tls_encrypted else false }}

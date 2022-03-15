@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+---
+mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula: false
+mssql_accept_microsoft_cli_utilities_for_sql_server_eula: false
+mssql_accept_microsoft_sql_server_standard_eula: false
+mssql_version: 2019
+mssql_upgrade: false
+mssql_password:
+mssql_edition:
+mssql_tcp_port:
+mssql_ip_address:
+mssql_input_sql_file:
+mssql_enable_sql_agent:
+mssql_install_fts:
+mssql_install_powershell:
+mssql_enable_ha:
+mssql_tune_for_fua_storage:
+mssql_tls_enable:
+mssql_tls_cert:
+mssql_tls_private_key:
+mssql_tls_force: false
+mssql_tls_version: 1.2
