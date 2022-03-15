@@ -1,0 +1,3 @@
+standard-inventory-qcow2:
+  qemu:
+    m: 4096

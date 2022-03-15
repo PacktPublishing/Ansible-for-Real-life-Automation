@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+---
+# This tasks file verifies the value of a mssql-conf setting.
+# It takes two variables:
+# __mssql_conf_setting - the setting name
+# __mssql_conf_value - the setting value
+- name: Get the value of the {{ __mssql_conf_setting }} setting
+  shell: grep '^{{ __mssql_conf_setting }}' /var/opt/mssql/mssql.conf || true
+  changed_when: false
+  register: __mssql_conf_get_setting
+
+- name: Verify the {{ __mssql_conf_setting }} setting when it is type str
+  vars:
+  # basename is needed for settings that have path values, such as tlskey
+    __mssql_conf_get_value: >-
+      {{ __mssql_conf_get_setting.stdout |
+      regex_replace( '^.*\s=\s', '') | string | lower | basename }}
+  assert:
+    that: __mssql_conf_get_value == __mssql_conf_value | string
+  when: "__mssql_conf_value | type_debug == 'str'"
+
+- name: Verify the {{ __mssql_conf_setting }} setting when it is type bool
+  vars:
+    __mssql_conf_get_value: >-
+      {{ __mssql_conf_get_setting.stdout |
+      regex_replace( '^.*\s=\s', '') | bool }}
+  assert:
+    that: __mssql_conf_get_value == __mssql_conf_value
+  when: "__mssql_conf_value | type_debug == 'bool'"

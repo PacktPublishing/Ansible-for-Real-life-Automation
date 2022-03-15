@@ -1,0 +1,476 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Set platform/version specific variables
+  include_vars: "{{ __mssql_vars_file }}"
+  loop:
+    - "{{ ansible_facts['os_family'] }}.yml"
+    - "{{ ansible_facts['distribution'] }}.yml"
+    - >-
+      {{ ansible_facts['distribution'] ~ '_' ~
+      ansible_facts['distribution_major_version'] }}.yml
+    - >-
+      {{ ansible_facts['distribution'] ~ '_' ~
+      ansible_facts['distribution_version'] }}.yml
+  vars:
+    __mssql_vars_file: "{{ role_path }}/vars/{{ item }}"
+  when: __mssql_vars_file is file
+
+- name: Link the deprecated accept_microsoft_sql_server_2019_standard_eula fact
+  set_fact:
+    mssql_accept_microsoft_sql_server_standard_eula: >-
+      {{ mssql_accept_microsoft_sql_server_2019_standard_eula }}
+  when: mssql_accept_microsoft_sql_server_2019_standard_eula is defined
+
+- name: Verify that the user accepts EULA variables
+  assert:
+    that:
+      - mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula | bool
+      - mssql_accept_microsoft_cli_utilities_for_sql_server_eula | bool
+      - mssql_accept_microsoft_sql_server_standard_eula | bool
+    fail_msg:
+      - "You must accept EULA by setting the following variables to true:"
+      - "mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula"
+      - "mssql_accept_microsoft_cli_utilities_for_sql_server_eula"
+      - "mssql_accept_microsoft_sql_server_standard_eula"
+
+- name: Verify if the mssql_version variable is provided correctly
+  assert:
+    that: mssql_version | int == 2017 or mssql_version | int == 2019
+    fail_msg: "The mssql_version variable must be set to either 2017 or 2019."
+
+- name: Verify if the mssql_upgrade variable is provided correctly
+  fail:
+    msg:
+      - "You set mssql_upgrade to true and mssql_version to 2017."
+      - "If you want to upgrade, set the variables as such:"
+      - "mssql_version: 2019"
+      - "mssql_upgrade: true"
+  when:
+    - mssql_upgrade | bool
+    - mssql_version | int == 2017
+
+- name: Gather package facts
+  package_facts:
+    manager: auto
+
+- name: >-
+    Verify if mssql_version is not smaller then the existing SQL Server version
+  fail:
+    msg:
+      - "You set mssql_version to 2017, but your SQL Server is version 2019."
+      - "The role does not support downgrading SQL Server."
+  when:
+    - mssql_version | int == 2017
+    - ansible_facts.packages["mssql-server"][0]["version"] is defined
+    - ansible_facts.packages["mssql-server"][0]["version"] is search("^15.*")
+
+- name: Deploy the GPG key for Microsoft repositories
+  rpm_key:
+    key: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+
+# This works only on systems that use yum or dnf
+- name: Update all packages from SQL Server 2017 repo
+  package:
+    name: "*"
+    disablerepo: "*"
+    enablerepo: packages-microsoft-com-mssql-server-2017
+    state: latest # noqa 403
+  when:
+    - mssql_upgrade | bool
+    - ansible_facts.packages["mssql-server"][0]["version"] is defined
+    - ansible_facts.packages["mssql-server"][0]["version"] is search("^14.*")
+
+- name: Remove the Microsoft SQL Server 2017 repository to upgrade to 2019
+  yum_repository:
+    name: packages-microsoft-com-mssql-server-2017
+    state: absent
+  when: mssql_upgrade | bool
+
+- name: Configure the Microsoft SQL Server {{ mssql_version }} repository
+  yum_repository:
+    name: packages-microsoft-com-mssql-server-{{ mssql_version | int }}
+    description: Microsoft SQL Server {{ mssql_version }}
+    baseurl: "{{ __mssql_server_repository }}"
+    gpgcheck: true
+  when: >-
+    (__mssql_server_packages not in ansible_facts.packages) or
+    (mssql_upgrade | bool)
+
+- name: Ensure the {{ __mssql_server_packages }} package
+  package:
+    name: "{{ __mssql_server_packages }}"
+    state: "{{ 'latest' if mssql_upgrade else 'present' }}"
+
+# /opt/mssql/bin/sqlservr requires libldap-2.4.so.2. Latest Fedora use newer
+# libldap by default, therefore, it is required to install openldap-compat
+# because it provides libldap-2.4.so.2.
+- name: Ensure that the openldap-compat package is installed
+  package:
+    name: openldap-compat
+    state: present
+  when:
+    - ansible_distribution == "Fedora"
+    - ansible_distribution_version | int >= 34
+
+- name: Check if the errorlog file exists and its location
+  shell: |
+    set -euo pipefail
+    errorlog="$(grep '^errorlogfile' /var/opt/mssql/mssql.conf \
+    | sed 's/errorlogfile : //')" || :
+    if [ -s "${errorlog}" ]; then
+      echo "${errorlog}"
+    elif [ -s /var/opt/mssql/log/errorlog ]; then
+      echo /var/opt/mssql/log/errorlog
+    else
+      echo ""
+    fi
+  changed_when: false
+  register: __mssql_errorlog
+
+- name: Gather system services facts
+  service_facts:
+
+- name: Set up MSSQL
+  when: not __mssql_is_setup
+  vars:
+    __mssql_is_setup: >-
+      {{ ('running' in
+      ansible_facts['services']['mssql-server.service']['state']) or
+      ('enabled' in
+      ansible_facts['services']['mssql-server.service']['status']) or
+      (__mssql_errorlog.stdout | length > 0) }}
+  block:
+    - name: Verify that the variables required for setting up MSSQL are defined
+      assert:
+        that:
+          - mssql_password is not none
+          - mssql_edition is not none
+        fail_msg:
+          - "You must define the following variables to set up MSSQL:"
+          - "mssql_password"
+          - "mssql_edition"
+
+    - name: Set up MSSQL
+      command: /opt/mssql/bin/mssql-conf -n setup
+      environment:
+        - ACCEPT_EULA: "Y"
+        - MSSQL_SA_PASSWORD: "{{ mssql_password }}"
+        - MSSQL_PID: "{{ mssql_edition }}"
+      when: not __mssql_is_setup
+      register: __mssql_conf_setup
+
+- name: Ensure that the tuned-profiles-mssql package is installed
+  package:
+    name: tuned-profiles-mssql
+    state: present
+
+- name: Ensure that the tuned service is started and enabled
+  service:
+    name: tuned
+    state: started
+    enabled: true
+
+- name: Get the active Tuned profiles
+  command: tuned-adm active
+  changed_when: false
+  register: __mssql_tuned_active_profiles
+
+# adding the mssql profile to the end of the list ensures
+# that it overrides conflicting settings in other profiles
+- name: Add mssql to the list of Tuned profiles
+  when: '"mssql" not in __mssql_tuned_active_profiles.stdout'
+  block:
+    - name: Attempt to add mssql to the list of Tuned profiles
+      command: >-
+        tuned-adm profile {{ __mssql_tuned_active_profiles.stdout |
+        regex_replace( '^Current active profile: ', '' ) }} mssql
+      register: __mssql_tuned_adm_profile
+      changed_when: __mssql_tuned_adm_profile.stderr | length == 0
+      failed_when: false
+
+  # It is needed because there is a bug in tuned that causes issues when
+  # adding multiple profiles with common ancestors. Fail happens for example,
+  # when running `tuned-adm profile virtual-guest mssql` because both profiles
+  # include `throughput-performance`
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1825882
+    - name: Remove troublemaking include from the mssql profile
+      lineinfile:
+        path: /usr/lib/tuned/mssql/tuned.conf
+        regexp: include=throughput-performance
+        state: absent
+      when: >-
+        "Cannot find profile 'throughput-performance'" in
+        __mssql_tuned_adm_profile.stderr
+
+    - name: Add the fixed mssql profile to the list of Tuned profiles
+      command: >-
+        tuned-adm profile {{ __mssql_tuned_active_profiles.stdout |
+        regex_replace( '^Current active profile: ', '' ) }} mssql
+      when: >-
+        "Cannot find profile 'throughput-performance'" in
+        __mssql_tuned_adm_profile.stderr
+      register: __mssql_tuned_adm_profile
+      changed_when: __mssql_tuned_adm_profile.stderr | length == 0
+
+- name: Configure the Microsoft SQL Server Tools repository
+  yum_repository:
+    name: packages-microsoft-com-prod
+    description: Microsoft SQL Server Tools
+    baseurl: "{{ __mssql_client_repository }}"
+    gpgcheck: true
+
+- name: Ensure that SQL Server client tools are installed
+  package:
+    name: "{{ __mssql_client_packages }}"
+    state: present
+  environment:
+    - ACCEPT_EULA: Y
+
+- name: Set a new password for the MSSQL sa user
+  when:
+    - __mssql_conf_setup is skipped
+    - mssql_password is not none
+  block:
+    - name: Prepare MSSQL and facts for logging in
+      include_tasks: verify_password.yml
+      vars:
+        __mssql_password: "{{ mssql_password }}"
+
+    - name: Check if the set password matches the existing password
+      command: "{{ __mssql_sqlcmd_login_cmd }} -Q 'SELECT @@VERSION'"
+      ignore_errors: true
+      changed_when: false
+      register: __mssql_password_query
+
+    - name: Ensure that the mssql-server service is stopped
+      service:
+        name: mssql-server
+        state: stopped
+      when: __mssql_password_query is failed
+      notify: Restart the mssql-server service
+
+    - name: Change the password of the sa user
+      command: /opt/mssql/bin/mssql-conf set-sa-password
+      environment:
+        - MSSQL_SA_PASSWORD: "{{ mssql_password }}"
+      when: __mssql_password_query is failed
+      notify: Restart the mssql-server service
+
+- name: Set a new edition for MSSQL
+  when:
+    - __mssql_conf_setup is skipped
+    - mssql_edition is not none
+  block:
+    - name: Check if the set edition matches the existing edition
+      shell: |
+        errorlog_edition="$(grep -oi '{{ mssql_edition }} edition' \
+        {{ __mssql_errorlog.stdout }})"
+        if [ -z "${errorlog_edition}" ]; then
+          edition_matches=false
+        else
+          edition_matches=true
+        fi
+        echo "${edition_matches}"
+      register: __mssql_edition_matches
+      changed_when: false
+
+    - name: Ensure that the mssql-server service is stopped
+      service:
+        name: mssql-server
+        state: stopped
+      when: not __mssql_edition_matches.stdout | bool
+      notify: Restart the mssql-server service
+
+    - name: Change the edition of MSSQL
+      command: /opt/mssql/bin/mssql-conf set-edition
+      environment:
+        MSSQL_PID: "{{ mssql_edition }}"
+      register: __mssql_conf_set_edition
+      changed_when: '"The new edition is" in __mssql_conf_set_edition.stdout'
+      when: not __mssql_edition_matches.stdout | bool
+      notify: Restart the mssql-server service
+
+- name: Configure the IP address setting
+  include_tasks: mssql_conf_setting.yml
+  vars:
+    __mssql_conf_setting: "network ipaddress"
+    __mssql_conf_setting_value: "{{ mssql_ip_address }}"
+  when: mssql_ip_address is not none
+
+- name: Configure the TCP port setting
+  include_tasks: mssql_conf_setting.yml
+  vars:
+    __mssql_conf_setting: "network tcpport"
+    __mssql_conf_setting_value: "{{ mssql_tcp_port }}"
+  when: mssql_tcp_port is not none
+
+- name: Verify that the mssql_password variable is defined
+  assert:
+    that:
+      - mssql_password is not none
+    fail_msg: >-
+      You must define the mssql_password variable because MSSQL requires
+      the sa user to authenticate to input SQL files.
+  when: mssql_input_sql_file is not none
+
+- name: Input the {{ mssql_input_sql_file }} file to MSSQL
+  when: mssql_input_sql_file is not none
+  block:
+    - name: Create a tempfile for the SQL file on the host
+      tempfile:
+        state: file
+      register: __mssql_sql_tempfile
+
+    - name: Copy the {{ mssql_input_sql_file }} file to the host
+      copy:
+        src: "{{ mssql_input_sql_file }}"
+        dest: "{{ __mssql_sql_tempfile.path }}"
+        mode: preserve
+
+    - name: Ensure that the mssql-server service is started
+      service:
+        name: mssql-server
+        state: started
+
+    - name: Prepare MSSQL and facts for logging in
+      include_tasks: verify_password.yml
+      vars:
+        __mssql_password: "{{ mssql_password }}"
+
+    - name: Input the {{ mssql_input_sql_file }} file with the sqlcmd command
+      command: >-
+        {{ __mssql_sqlcmd_login_cmd }} -i {{ __mssql_sql_tempfile.path }} -b
+      register: __mssql_sqlcmd_input_file
+      ignore_errors: true
+
+  always:
+    - name: Print the output of the sqlcmd command
+      debug:
+        var: __mssql_sqlcmd_input_file.stdout_lines
+
+    - name: Remove the tempfile
+      file:
+        path: "{{ __mssql_sql_tempfile.path }}"
+        state: absent
+
+- name: Configure the sqlagent setting
+  include_tasks: mssql_conf_setting.yml
+  vars:
+    __mssql_conf_setting: "sqlagent enabled"
+    __mssql_conf_setting_value: "{{ mssql_enable_sql_agent }}"
+  when: mssql_enable_sql_agent is not none
+
+- name: Ensure the {{ __mssql_server_fts_packages }} package
+  package:
+    name: "{{ __mssql_server_fts_packages }}"
+    state: "{{ 'present' if mssql_install_fts | bool else 'absent' }}"
+  when: mssql_install_fts is not none
+  notify: Restart the mssql-server service
+
+- name: Ensure the {{ __mssql_powershell_packages }} package
+  package:
+    name: "{{ __mssql_powershell_packages }}"
+    state: "{{ 'present' if mssql_install_powershell | bool else 'absent' }}"
+  when: mssql_install_powershell is not none
+
+- name: Configure HA
+  when: mssql_enable_ha is not none
+  block:
+    - name: Ensure the {{ __mssql_server_ha_packages }} package
+      package:
+        name: "{{ __mssql_server_ha_packages }}"
+        state: "{{ 'present' if mssql_enable_ha | bool else 'absent' }}"
+      notify: Restart the mssql-server service
+
+    - name: Configure the hadrenabled setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_conf_setting: "hadr hadrenabled"
+        __mssql_conf_setting_value: "{{ 1 if mssql_enable_ha else 0 }}"
+
+- name: Tune MSSQL for FUA-capable storage
+  when: mssql_tune_for_fua_storage is not none
+  block:
+    - name: Check if the 3979 trace flag is enabled
+      shell: grep '^traceflag' /var/opt/mssql/mssql.conf || true
+      changed_when: false
+      register: __mssql_get_traceflag
+
+    - name: Set the 3979 traceflag
+      command: >-
+        /opt/mssql/bin/mssql-conf traceflag 3979 on
+      when:
+        - mssql_tune_for_fua_storage | bool
+        - "'3979' not in __mssql_get_traceflag.stdout"
+
+    - name: Unset the 3979 traceflag
+      command: >-
+        /opt/mssql/bin/mssql-conf traceflag 3979 off
+      when:
+        - not mssql_tune_for_fua_storage | bool
+        - "'3979' in __mssql_get_traceflag.stdout"
+
+  # the alternatewritethrough must be set to `false` as per MS docs
+    - name: Configure the alternatewritethrough setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_conf_setting: "control alternatewritethrough"
+        __mssql_conf_setting_value: "0"
+
+    - name: Configure the writethrough setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_conf_setting: "control writethrough"
+        __mssql_conf_setting_value: >-
+          {{ 1 if mssql_tune_for_fua_storage else 0 }}
+
+- name: Configure TLS encryption
+  when:
+    - mssql_tls_enable is not none
+  block:
+    - name: Copy certificate and private_key files to the host
+      copy:
+        src: "{{ item }}"
+        dest: >-
+          /etc/pki/tls/{{ 'certs' if item == mssql_tls_cert
+          else 'private' }}/{{ item | basename }}
+        owner: mssql
+        group: mssql
+        mode: 0600
+        force: "{{ mssql_tls_force }}"
+      with_items:
+        - "{{ mssql_tls_cert }}"
+        - "{{ mssql_tls_private_key }}"
+      when: mssql_tls_enable | bool
+
+    - name: Configure the tlscert setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_tls_cert_dest: >-
+          /etc/pki/tls/certs/{{ mssql_tls_cert | basename }}
+        __mssql_conf_setting: "network tlscert"
+        __mssql_conf_setting_value: >-
+          {{ __mssql_tls_cert_dest if mssql_tls_enable else 'unset' }}
+
+    - name: Configure the tlskey setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_tls_private_key_dest: >-
+          /etc/pki/tls/private/{{ mssql_tls_private_key | basename }}
+        __mssql_conf_setting: "network tlskey"
+        __mssql_conf_setting_value: >-
+          {{ __mssql_tls_private_key_dest if mssql_tls_enable else 'unset' }}
+
+    - name: Configure the tlsprotocols setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_conf_setting: "network tlsprotocols"
+        __mssql_conf_setting_value: >-
+          {{ mssql_tls_version if mssql_tls_enable else 'unset' }}
+
+    - name: Configure the forceencryption setting
+      include_tasks: mssql_conf_setting.yml
+      vars:
+        __mssql_conf_setting: "network forceencryption"
+        __mssql_conf_setting_value: "{{ '1' if mssql_tls_enable else 'unset' }}"

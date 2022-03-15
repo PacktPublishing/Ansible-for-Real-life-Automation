@@ -1,0 +1,9 @@
+# vars/postgres.yaml 
+postgresql_databases:
+  - name: database_demo
+postgresql_users:
+  - name: demouser
+    password: password
+postgresql_hba_entries:
+  - { type: local, database: all, user: all, auth_method: peer }
+  - { type: host, database: all, user: all, address: '0.0.0.0/0', auth_method: md5 }

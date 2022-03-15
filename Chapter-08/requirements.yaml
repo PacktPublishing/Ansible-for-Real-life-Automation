@@ -1,0 +1,11 @@
+---
+roles:
+  # Install a role from Ansible Galaxy.
+  #- name: geerlingguy.adminer
+  #  version: 1.9.6
+
+collections:
+  # Install a collection from Ansible Galaxy.
+  - name: community.postgresql
+    version: 2.1.1
+    source: https://galaxy.ansible.com

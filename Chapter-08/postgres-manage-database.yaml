@@ -1,0 +1,55 @@
+# postgres-manage-database.yaml
+---
+- name: Deploying PostgreSQL Database Server
+  hosts: "{{ NODES }}" 
+  vars:
+    ansible_become_user: postgres  
+    postgres_user: postgres
+    postgres_password: 'PassWord'
+    postgres_host: localhost
+    postgres_database: db_sales
+    postgres_table: demo_table
+    postgres_new_user_name: devteam
+    postgres_new_user_password: 'DevPassword'
+  tasks:
+    - name: Create a new database
+      community.postgresql.postgresql_db:
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password | default(omit) }}"
+        login_host: "{{ postgres_host | default('localhost') }}"
+        name: "{{ postgres_database }}"
+
+    - name: Create table with few columns
+      community.postgresql.postgresql_table:
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_host: "{{ postgres_host }}"
+        db: "{{ postgres_database }}"
+        name: "{{ postgres_table }}"
+        columns:
+          - id bigserial primary key
+          - num bigint
+          - stories text
+        ssl_mode: disable
+
+    - name: Create user and grant access to database
+      community.postgresql.postgresql_user:
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_host: "{{ postgres_host }}"
+        db: "{{ postgres_database }}"
+        name: "{{ postgres_new_user_name }}"
+        password: "{{ postgres_new_user_password }}"
+        encrypted: yes
+        priv: "CONNECT/{{ postgres_table }}:ALL"
+        expires: "Dec 31 2022"
+        comment: "Developer user access"
+        state: present
+    #- name: Dump existing database to a file
+    #  community.postgresql.postgresql_db:
+    #    login_user: "{{ postgres_user }}"
+    #    login_password: "{{ postgres_password }}"
+    #    login_host: "{{ postgres_host }}"
+    #    name: "{{ postgres_database }}" #prod_db_sales
+    #    state: dump
+    #    target: /tmp/test.sql #/data/db_dumps/daily_prod_db_sales.sql

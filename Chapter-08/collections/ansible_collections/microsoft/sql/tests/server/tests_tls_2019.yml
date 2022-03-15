@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that tls encryption configuration works
+  hosts: all
+  vars:
+    mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula: true
+    mssql_accept_microsoft_cli_utilities_for_sql_server_eula: true
+    mssql_accept_microsoft_sql_server_standard_eula: true
+  tasks:
+    - name: Ensure the openssl package on localhost
+      package:
+        name: openssl
+        state: present
+      delegate_to: localhost
+
+    - name: >-
+        Generate a self-signed certificate and public key in the test directory
+        on localhost
+      command: >-
+        openssl req -x509 -nodes -newkey rsa:2048
+        -subj "/CN={{ ansible_default_ipv4.address }}"
+        -keyout mssql.key -out mssql.pem -days 365
+      changed_when: true
+      delegate_to: localhost
+
+    - name: >-
+        Set up MSSQL and remove the certificate and public key on localhost.
+        Test relative and full path with cert and private_key vars.
+      block:
+        - name: Set up MSSQL
+          include_role:
+            name: microsoft.sql.server
+            public: true
+          vars:
+            mssql_password: "p@55w0rD"
+            mssql_edition: Evaluation
+            mssql_tls_enable: true
+            mssql_tls_cert: "{{ playbook_dir }}/mssql.pem"
+            mssql_tls_private_key: mssql.key
+            mssql_tcp_port: 1433
+
+      always:
+        - name: Remove the certificate and public key on localhost
+          file:
+            path: "{{ item }}"
+            state: absent
+          delegate_to: localhost
+          loop:
+            - mssql.pem
+            - mssql.key
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Verify connectivity and settings
+      include_tasks: tasks/verify_settings.yml
+      vars:
+        __verify_mssql_password: "p@55w0rD"
+        __verify_mssql_is_tls_encrypted: true
+
+    - name: Disable TLS encryption
+      include_role:
+        name: microsoft.sql.server
+        public: true
+      vars:
+        mssql_tls_enable: false
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Verify connectivity and settings
+      include_tasks: tasks/verify_settings.yml
+      vars:
+        __verify_mssql_password: "p@55w0rD"
+        __verify_mssql_is_tls_encrypted: false

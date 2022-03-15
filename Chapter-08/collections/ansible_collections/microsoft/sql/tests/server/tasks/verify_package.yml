@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+---
+# This tasks file verifies if the provided package is installed or not.
+# It takes to variables:
+# __mssql_verify_package - the package to verify
+# __mssql_verify_installed - boolean
+- name: Gather package facts
+  package_facts:
+    manager: auto
+
+- name: Verify if the {{ __mssql_verify_package_name }} package is installed
+  assert:
+    that: __mssql_verify_package_name in ansible_facts.packages
+  when: __mssql_verify_package_installed | bool
+
+- name: Verify if the {{ __mssql_verify_package_name }} package is not installed
+  assert:
+    that: __mssql_verify_package_name not in ansible_facts.packages
+  when: not __mssql_verify_package_installed

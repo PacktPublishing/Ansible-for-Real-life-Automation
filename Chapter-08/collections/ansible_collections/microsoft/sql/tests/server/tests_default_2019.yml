@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that the role runs with default parameters
+  hosts: all
+  tasks:
+    - name: Verify that by default the role fails with EULA not accepted
+      block:
+        - name: Run the role with default parameters
+          include_role:
+            name: microsoft.sql.server
+
+        - name: Unreachable task
+          fail:
+            msg: The above task must fail
+
+      rescue:
+        - name: Assert that the role failed with EULA not accepted
+          assert:
+            that: >-
+              'You must accept EULA' in ansible_failed_result.msg.0

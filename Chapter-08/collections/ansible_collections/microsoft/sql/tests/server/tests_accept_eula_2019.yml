@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that the role runs when EULA are accepted
+  hosts: all
+  vars:
+    mssql_accept_microsoft_odbc_driver_17_for_sql_server_eula: true
+    mssql_accept_microsoft_cli_utilities_for_sql_server_eula: true
+    mssql_accept_microsoft_sql_server_standard_eula: true
+  tasks:
+    - name: Verify the failure on a fresh host when required vars undefined
+      block:
+        - name: Run the role with default parameters
+          include_role:
+            name: microsoft.sql.server
+
+        - name: Unreachable task
+          fail:
+            msg: The above task must fail
+
+      rescue:
+        - name: Assert that the role failed with variables undefined
+          assert:
+            that: >-
+              'You must define the following variables to set up MSSQL' in
+              ansible_failed_result.msg.0
