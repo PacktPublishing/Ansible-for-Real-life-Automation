@@ -1,0 +1,78 @@
+---
+# Chapter-09/rolling-update.yaml
+- name: Rolling Update
+  hosts: "{{ NODES }}"
+  become: yes
+  serial: 1
+  vars:
+    haproxy_backend_name: 'habackend' 
+    application_repo: 'https://github.com/ginigangadharan/website-demo-one-page'
+    application_branch: production
+    application_path: /var/www/html
+  
+  tasks:
+
+    - name: Disable server in haproxy backend
+      community.general.haproxy:
+        state: disabled
+        host: '{{ inventory_hostname }}'
+        wait: yes
+        socket: "/var/lib/haproxy/stats"
+        backend: "{{ haproxy_backend_name }}"
+        fail_on_not_found: yes
+      delegate_to: '{{ item }}'
+      with_items: '{{ groups.loadbalancer }}'
+    
+    - name: Stop httpd service 
+      ansible.builtin.service:
+        name: httpd
+        state: stopped
+
+    - name: Delete content & directory if exists
+      ansible.builtin.file:
+        state: absent
+        path: "{{ application_path }}"
+
+    - name: Create application directory
+      ansible.builtin.file:
+        state: directory
+        path: "{{ application_path }}"
+        mode: '0755'
+
+    - name: Git checkout - latest application content
+      ansible.builtin.git:
+        repo: "{{ application_repo }}"
+        dest: "{{ application_path }}"
+        version: "{{ application_branch }}"
+    
+    - name: Update index.html with server details
+      ansible.builtin.lineinfile:
+        path: "{{ application_path }}/index.html"
+        regexp: 'SERVER_DETAILS'
+        line: "<h3>(Installed using Ansible. Serving from {{ ansible_hostname }})</h3>"
+
+    - name: Start httpd service 
+      ansible.builtin.service:
+        name: httpd
+        state: started
+
+    - name: Enable server in haproxy backend
+      community.general.haproxy:
+        state: enabled
+        host: '{{ inventory_hostname }}'
+        wait: yes
+        socket: "/var/lib/haproxy/stats"
+        backend: "{{ haproxy_backend_name }}"
+        fail_on_not_found: yes
+      delegate_to: '{{ item }}'
+      with_items: '{{ groups.loadbalancer }}'
+
+- name: Verify load balancer traffic
+  hosts: loadbalancer
+  become: no
+  tasks:
+    - name: Verify load balancer traffic
+      ansible.builtin.uri: 
+        url: http://{{ inventory_hostname }}.lab.local
+        status_code: 200
+      delegate_to: localhost

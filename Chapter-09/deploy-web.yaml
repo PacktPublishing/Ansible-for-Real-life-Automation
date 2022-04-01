@@ -1,0 +1,70 @@
+---
+# Chapter-09/deploy-web.yaml
+- name: Deploying Application
+  hosts: "{{ NODES }}"
+  become: yes
+  vars:
+    application_repo: 'https://github.com/ginigangadharan/website-demo-one-page'
+    application_branch: production
+    application_path: /var/www/html
+
+  tasks:
+    - name: Delete content & directory if exists
+      ansible.builtin.file:
+        state: absent
+        path: "{{ application_path }}"
+
+    - name: Create application directory
+      ansible.builtin.file:
+        state: directory
+        path: "{{ application_path }}"
+        mode: '0755'
+
+    - name: Install httpd, firewalld and Git packages
+      ansible.builtin.dnf:
+        name: 
+          - httpd >= 2.4
+          - firewalld
+          - git
+        state: latest
+
+    - name: Enable and Run firewalld service
+      ansible.builtin.service: 
+        name: firewalld
+        enabled: true
+        state: started
+
+    - name: Permit httpd service in firewall
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: yes
+
+    - name: Enable and start httpd service 
+      ansible.builtin.service:
+        name: httpd
+        enabled: true
+        state: started
+
+    - name: Git checkout the application or website
+      ansible.builtin.git:
+        repo: "{{ application_repo }}"
+        dest: "{{ application_path }}"
+        version: "{{ application_branch }}"
+        
+    - name: Update index.html with server details
+      ansible.builtin.lineinfile:
+        path: "{{ application_path }}/index.html"
+        regexp: 'SERVER_DETAILS'
+        line: "<h3>(Installed using Ansible. Serving from {{ ansible_hostname }})</h3>"
+
+- name: Verify deployment
+  hosts: "{{ NODES }}"
+  become: no
+  tasks:
+    - name: Verify application health
+      ansible.builtin.uri: 
+        url: http://{{ inventory_hostname }}.lab.local
+        status_code: 200
+      delegate_to: localhost

@@ -1,0 +1,8 @@
+---
+# tasks file for firewalld-manage
+- firewalld:
+    service: "{{ item }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  with_list: "{{ port_list }}"

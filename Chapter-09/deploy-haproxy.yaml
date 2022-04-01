@@ -1,0 +1,46 @@
+---
+# Chapter-09/deploy-haproxy.yaml
+- name: Deploy Load Balancer using HAProxy
+  hosts: loadbalancer
+  become: yes
+  vars:
+    haproxy_frontend_name: 'hafrontend'
+    haproxy_backend_name: 'habackend'
+    haproxy_backend_servers:
+      - name: node1
+        address: 192.168.56.25:80
+      - name: node2
+        address: 192.168.56.24:80
+  tasks:
+    - name: Install haproxy
+      include_role:
+        name: geerlingguy.haproxy
+
+    - name: Permit port 80 in firewall
+      ansible.posix.firewalld:
+        port: 80/tcp
+        permanent: true
+        state: enabled
+        immediate: yes
+
+- name: Verify load balancer deployment
+  hosts: loadbalancer
+  become: no
+  tasks:
+    - name: Verify load balancer health
+      ansible.builtin.uri: 
+        url: http://{{ inventory_hostname }}.lab.local
+        status_code: 200
+      delegate_to: localhost
+
+#- name: "Open http port in firewalld"
+#  hosts: lb
+#  become: True
+#  vars:
+#    port_list:
+#      - "http"
+#      - "https"      
+#  tasks: 
+#    - name: "Adjust firewalld port"
+#      include_role:
+#        name: firewalld-port-tasks  
