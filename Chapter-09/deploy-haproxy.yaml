@@ -32,15 +32,3 @@
         url: http://{{ inventory_hostname }}.lab.local
         status_code: 200
       delegate_to: localhost
-
-#- name: "Open http port in firewalld"
-#  hosts: lb
-#  become: True
-#  vars:
-#    port_list:
-#      - "http"
-#      - "https"      
-#  tasks: 
-#    - name: "Adjust firewalld port"
-#      include_role:
-#        name: firewalld-port-tasks  
