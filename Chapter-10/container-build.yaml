@@ -1,0 +1,82 @@
+---
+# Chapter-10/container-build.yaml
+- name: Building Container Images
+  hosts: "{{ NODES }}"
+  become: yes
+  vars:
+    application_repo: https://github.com/ginigangadharan/nodejs-todo-demo-app
+    application_branch: main
+    application_name: todo-app
+    application_version: v1
+    
+    container_image_repository: ginigangadharan
+    container_registry_url: https://index.docker.io/v1/
+
+  vars_files:
+    - vars/docker-credential.yaml
+  tasks:
+    - name: Create temporary location
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: "container_build_"
+      register: temp_location
+
+    - debug:
+        msg: "{{ temp_location.path }}"
+
+    - name: Git checkout the application
+      ansible.builtin.git:
+        repo: "{{ application_repo }}"
+        dest: "{{ temp_location.path }}"
+        version: "{{ application_branch }}"
+
+    - name: Delete existing container image with same name and tag
+      community.docker.docker_image:
+        name: "{{ application_name }}"
+        tag: "{{ application_version }}"
+        state: absent
+
+    - name: Build container image
+      community.docker.docker_image:
+        name: "{{ application_name }}"
+        tag: "{{ application_version }}"
+        build:
+          path: "{{ temp_location.path }}"
+        source: build
+        state: present
+    
+    - name: Integration and other tests
+      debug:
+        msg: "Your tests can be included here..."
+
+    - name: Log into DockerHub
+      community.docker.docker_login:
+        registry_url: "{{ container_registry_url }}"
+        username: "{{ docker_username }}"
+        password: "{{ docker_password }}"
+
+    - name: Push container image to registry
+      community.docker.docker_image:
+        name: "{{ application_name }}"
+        tag: "{{ application_version }}"
+        repository: "{{ container_image_repository }}/{{ application_name }}:{{ application_version }}"
+        source: local
+        push: yes
+
+    - name: Add tag latest to image
+      community.docker.docker_image:
+        name: "{{ application_name }}:{{ application_version }}"
+        repository: "{{ container_image_repository }}/{{ application_name }}:latest"
+        force_tag: yes
+        push: yes
+        source: local
+
+    - name: Log out of DockerHub
+      community.docker.docker_login:
+        registry_url: "{{ container_registry_url }}"
+        state: absent
+
+    - name: Delete temporary location
+      ansible.builtin.file:
+        path: "{{ temp_location.path }}"
+        state: absent

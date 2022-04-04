@@ -1,0 +1,45 @@
+---
+# Chapter-10/container-manage.yaml
+- name: Manage Docker containers
+  hosts: "{{ NODES }}"
+  become: yes
+  vars:
+    container_image: nginx
+    container_name: web
+    container_port: 80
+    container_expose_port: 8080
+    container_action: 'run'
+  tasks:
+    - name: Create and Start a Docker container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ container_image }}"
+        state: started
+        ports: "{{ container_expose_port }}:{{ container_port }}"
+      when: container_action == 'run' 
+
+    - name: Stop Docker container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+      when: container_action == 'stop' 
+
+    - name: Remove Docker container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      when: container_action == 'stop' 
+
+- name: Verify web site running inside container
+  hosts: "{{ NODES }}"
+  become: no
+  vars:
+    container_expose_port: 8080
+    container_action: 'run'
+  tasks:
+    - name: Verify application health
+      ansible.builtin.uri: 
+        url: http://{{ inventory_hostname }}.lab.local:{{ container_expose_port }}
+        status_code: 200
+      delegate_to: localhost
+      when: container_action == 'run' 

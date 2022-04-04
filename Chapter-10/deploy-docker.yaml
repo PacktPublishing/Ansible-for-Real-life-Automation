@@ -1,0 +1,15 @@
+---
+# Chapter-10/deploy-docker.yaml
+- name: Deploy Docker to Host
+  hosts: "{{ NODES }}"
+  become: yes
+  vars:
+    pip_install_packages:
+      - name: docker
+  tasks:
+    - name: Install docker
+      include_role:
+        name: geerlingguy.docker
+    - name: Install docker
+      include_role:
+        name: geerlingguy.pip
