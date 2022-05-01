@@ -1,6 +1,6 @@
 ---
 - name: Install Chrony Package
-  hosts: dev-rhel8-55
+  hosts: node1
   become: true
   tasks:
     - name: Ensure chrony package is installed

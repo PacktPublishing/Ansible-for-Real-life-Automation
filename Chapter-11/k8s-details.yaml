@@ -1,0 +1,26 @@
+# Chapter-11/k8s-details.yaml
+---
+- name: Ansible Kubernetes Info
+  hosts: localhost
+  tasks:
+    - name: Get a list of all pods from any namespace
+      kubernetes.core.k8s_info:
+        kubeconfig: /home/ansible/.kube/minikube-config
+        kind: Pod
+        namespace: kube-system
+      register: pod_list
+    
+    - name: Display Pod Details
+      debug:
+        msg: "{{ pod_list }}"
+
+    - name: Get a list of Nodes
+      kubernetes.core.k8s_info:
+        kubeconfig: /home/ansible/.kube/minikube-config
+        kind: Node
+      register: node_list
+    
+    - name: Display Pod Details
+      debug:
+        msg: "{{ item.metadata.labels['kubernetes.io/hostname'] }}"
+      loop: "{{ node_list.resources }}"

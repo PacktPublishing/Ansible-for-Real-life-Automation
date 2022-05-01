@@ -1,0 +1,18 @@
+---
+# Chapter-11/k8s-app-scale.yaml
+- name: Scaling Applications in Kubernetes
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kubeconfig_file: /home/ansible/.kube/minikube-config
+    namespace_name: todoapp-ns
+  tasks:
+    - name: Scale deployment
+      kubernetes.core.k8s_scale:
+        kubeconfig: "{{ kubeconfig_file }}"
+        api_version: v1
+        kind: Deployment
+        name: todo-app
+        namespace: "{{ namespace_name }}"
+        replicas: 4
+        wait_timeout: 30
