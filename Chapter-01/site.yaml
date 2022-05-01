@@ -1,0 +1,10 @@
+## Chapter-01/site.yaml
+---
+- name: Install Vim Package
+  hosts: node1
+  become: true
+  tasks:
+    - name: Ensure vim package is installed
+      ansible.builtin.dnf:
+        name: vim
+        state: latest

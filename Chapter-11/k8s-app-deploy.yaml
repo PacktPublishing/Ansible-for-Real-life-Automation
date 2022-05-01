@@ -1,0 +1,30 @@
+---
+# Chapter-11/k8s-app-deploy.yaml
+- name: Deploying Application to Kubernetes
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kubeconfig_file: /home/ansible/.kube/minikube-config
+    namespace_name: todoapp-ns
+  tasks:
+    - name: Create a k8s namespace
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_file }}"
+        name: "{{ namespace_name }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Create Deployment
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_file }}"
+        state: present
+        src: todo-app-deploy.yaml
+        namespace: "{{ namespace_name }}"
+
+    - name: Expose application on NodePort
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_file }}"
+        state: present
+        src: todo-app-service.yaml
+        namespace: "{{ namespace_name }}"

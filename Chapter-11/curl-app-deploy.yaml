@@ -1,0 +1,43 @@
+---
+# Chapter-11/curl-app-deploy.yaml
+- name: Deploying curl Pod
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kubeconfig_file: /home/ansible/.kube/minikube-config
+    namespace_name: todoapp-ns
+  tasks:
+
+    - name: Create a Pod with curl image
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_file }}"
+        state: present
+        src: curl-app-pod.yaml
+        namespace: "{{ namespace_name }}"
+
+    - name: Verify todo-app sevice 
+      ignore_errors: yes
+      kubernetes.core.k8s_exec:
+        kubeconfig: "{{ kubeconfig_file }}"
+        namespace: "{{ namespace_name }}"
+        pod: curl-pod
+        command: curl todoapp-svc:3000
+      register: curl_output
+
+    - name: Display service check output
+      debug:
+        msg: "{{ curl_output.stdout_lines }}"
+      when: curl_output.failed == false
+
+    - name: Display service check output
+      debug:
+        msg: "Service (todoapp-svc) is not reachable !"
+      when: curl_output.failed == true
+
+    - name: Delete curl pod
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_file }}"
+        state: absent
+        src: curl-app-pod.yaml
+        namespace: "{{ namespace_name }}"     
+        
