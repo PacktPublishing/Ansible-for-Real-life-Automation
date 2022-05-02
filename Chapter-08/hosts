@@ -6,6 +6,9 @@ node1 ansible_host=192.168.56.25
 node2 ansible_host=192.168.56.24
 node3 ansible_host=192.168.56.60
 
+[database]
+node2 ansible_host=192.168.56.24
+
 [windows]
 win2019 ansible_host=192.168.56.22
 

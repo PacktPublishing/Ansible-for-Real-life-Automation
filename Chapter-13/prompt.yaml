@@ -1,0 +1,16 @@
+---
+- hosts: node1
+  vars_prompt:
+
+    - name: user_name
+      prompt: Enter your username
+      private: no
+
+    - name: password
+      prompt: Enter your password
+
+  tasks:
+
+    - name: Print a message
+      ansible.builtin.debug:
+        msg: 'Logging in as {{ user_name }}'
