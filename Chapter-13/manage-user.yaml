@@ -1,0 +1,24 @@
+---
+# Chapter-13/manage-user.yaml
+- name: Creating Linux Users
+  hosts: node1
+  become: true
+  gather_facts: false
+  vars:
+    new_group: admins
+  vars_files:
+    - vars/users.yaml
+  tasks:
+    - name: Create new group
+      ansible.builtin.group:
+        name: "{{ new_group }}"
+        state: present
+    - name: Add the user
+      ansible.builtin.user:
+        name: "{{ item.value.username }}"
+        password: "{{ item.value.password | password_hash('sha256') }}"
+        shell: /bin/bash
+        groups: admins
+        append: yes
+      loop: "{{ lookup('dict', userlist, wantlist=True) }}"
+      no_log: True

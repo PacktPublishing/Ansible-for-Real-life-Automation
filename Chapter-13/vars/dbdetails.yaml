@@ -1,0 +1,4 @@
+database_username: dbadmin
+database_password: dbPassWord
+database_port: 5432
+database_ha: true

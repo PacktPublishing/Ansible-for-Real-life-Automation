@@ -1,0 +1,26 @@
+# Chapter-13/postgres-create-dbuser.yaml
+---
+- name: Add new PostgreSQL Database user
+  hosts: "{{ NODES }}" 
+  vars:
+    ansible_become_user: postgres  
+    postgres_user: postgres
+    #postgres_password: moved to Vault file 
+    postgres_host: localhost
+    postgres_database: db_sales
+    postgres_table: demo_table
+  tasks:
+
+    - name: Create user and grant access to database
+      community.postgresql.postgresql_user:
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_host: "{{ postgres_host }}"
+        db: "{{ postgres_database }}"
+        name: "{{ postgres_app_user_name }}"
+        password: "{{ postgres_app_user_password }}"
+        encrypted: yes
+        priv: "CONNECT/{{ postgres_table }}:ALL"
+        expires: "Dec 31 2022"
+        comment: "Application user access"
+        state: present
