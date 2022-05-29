@@ -1,0 +1,32 @@
+# postgres-backup-restore.yaml
+---
+- name: Deploying PostgreSQL Database Server
+  hosts: "{{ NODES }}" 
+  vars:
+    ansible_become_user: postgres  
+    postgres_user: postgres
+    postgres_password: 'PassWord'
+    postgres_host: localhost
+    postgres_database: db_sales
+    
+    db_action: 'restore' #'backup'
+  tasks:
+    - name: Dump existing database to a file
+      community.postgresql.postgresql_db:
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_host: "{{ postgres_host }}"
+        name: "{{ postgres_database }}"
+        state: dump
+        target: /tmp/test.sql
+      when: db_action == 'backup'
+
+    - name: Restore backup from file to database
+      community.postgresql.postgresql_db:
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_host: "{{ postgres_host }}"
+        name: "{{ postgres_database }}"
+        state: restore
+        target: /tmp/test.sql
+      when: db_action == 'restore'
