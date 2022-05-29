@@ -21,4 +21,4 @@
         groups: admins
         append: yes
       loop: "{{ lookup('dict', userlist, wantlist=True) }}"
-      no_log: True
+      #no_log: True

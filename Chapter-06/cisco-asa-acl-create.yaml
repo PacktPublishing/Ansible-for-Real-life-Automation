@@ -1,0 +1,60 @@
+---
+- name: Cisco ASA Create ACL Entry
+  hosts: "{{ nw_devices }}"
+  gather_facts: no
+
+  vars:
+    take_backup: "Yes"
+    tftp_server: 192.168.57.106
+    tftp_server_port: 69
+  
+    acl_identifier: Demo-ACL
+    acl_type: extended
+    acl_action: permit #or deny
+    acl_entry_source_ip: 10.1.20.11
+    acl_entry_source_mask: 255.255.255.255
+
+    asa_object_group_name: DEMO-NETWORK-TEAM-NEW
+    asa_object_group_type: network # service, security etc.
+    asa_object_group_host: 192.0.50.4
+
+  tasks:
+    - name: Set backup filename
+      ansible.builtin.set_fact:
+        backup_filename: "{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}_backup.cfg"
+    - name: Save configuration and take device Backup to tftp
+      cisco.asa.asa_command:
+        commands:
+        - write memory
+        - copy /noconfirm running-config tftp://{{ tftp_server }}/{{ backup_filename }}
+      when: take_backup == "Yes"
+
+    - name: Merge module attributes of given object-group
+      cisco.asa.asa_ogs:
+        config:
+        - object_type: network
+          object_groups:
+            - name: "{{ asa_object_group_name }}"
+              network_object:
+                host:
+                  - "{{ asa_object_group_host }}"
+        state: merged       
+
+    - name: Add new ACL Entry and Merge configuration with device configuration
+      cisco.asa.asa_acls:
+        config:
+          acls:
+            - name: "{{ acl_identifier }}"
+              acl_type: "{{ acl_type }}"
+              aces:
+              - grant: "{{ acl_action }}"
+                #line: 1
+                protocol_options:
+                  tcp: true
+                source:
+                  address: "{{ acl_entry_source_ip }}"
+                  netmask: "{{ acl_entry_source_mask }}"
+                destination:
+                  object_group: "{{ asa_object_group_name }}"
+                #log: default
+        state: merged
