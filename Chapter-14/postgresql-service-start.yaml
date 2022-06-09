@@ -1,0 +1,40 @@
+# postgresql-service-start.yaml
+---
+- name: Restarting PostgreSQL Database service
+  hosts: "{{ NODES }}" 
+  vars:
+  tasks:
+
+    - name: Update ServiceNow incident as In progress
+      servicenow.servicenow.snow_record:
+        username: "{{ snow_username }}"
+        password: "{{ snow_password }}"
+        instance: "{{ snow_instance_name}}"
+        state: present
+        number: "{{ snow_incident_number }}"
+        data:
+          work_notes : "Updating PostgreSQL service"
+          state: -3
+
+    - name: Start service postgresql, if not started
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+      register: psql_service_status
+      
+    - name: postgresql Service Status
+      debug:
+        msg: "{{ psql_service_status.state }}"
+
+    - name: Update ServiceNOW incident
+      servicenow.servicenow.snow_record:
+        username: "{{ snow_username }}"
+        password: "{{ snow_password }}"
+        instance: "{{ snow_instance_name}}"
+        state: present
+        number: "{{ snow_incident_number }}"
+        data:
+          work_notes : "PostgreSQL Service has been started"
+          state: 0
+      when: 
+        - psql_service_status.state == 'started'
