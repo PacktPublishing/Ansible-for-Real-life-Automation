@@ -13,6 +13,14 @@
   - [Figure 15.15. API call returned content](#figure-1515-api-call-returned-content)
   - [Figure 15.17. ToDo items fetched using API call](#figure-1517-todo-items-fetched-using-api-call)
   - [Figure 15.19. Output of new items add tasks](#figure-1519-output-of-new-items-add-tasks)
+  - [Figure 15.23. Ansible module path](#figure-1523-ansible-module-path)
+  - [Figure 15.24. Library path in ansible.cfg](#figure-1524-library-path-in-ansiblecfg)
+  - [Figure 15.27. Ansible playbook output for custom module](#figure-1527-ansible-playbook-output-for-custom-module)
+  - [Figure 15.32. Custom module details using ansible-doc command](#figure-1532-custom-module-details-using-ansible-doc-command)
+  - [Figure 15.33. Ansible custom module documentation details using ansible-doc command.png](#figure-1533-ansible-custom-module-documentation-details-using-ansible-doc-commandpng)
+  - [Figure 15.35. Verify playbook execution and hello_message module](#figure-1535-verify-playbook-execution-and-hello_message-module)
+  - [Figure 15.37. Build Ansible collection archive](#figure-1537-build-ansible-collection-archive)
+  - [Figure 15.38. Publish collection to Ansible Galaxy](#figure-1538-publish-collection-to-ansible-galaxy)
 
 ## 15.2. Output of Python Installation playbook
 
@@ -231,8 +239,151 @@ ok: [localhost] => {
 <omitted>...
 ```
 
-## Figure 15.20. Jinja2 template to prepare Akamai API call body 
+## Figure 15.23. Ansible module path
 
 ```yaml
+[ansible@ansible Chapter-15]$ ansible-config dump |grep DEFAULT_MODULE_PATH
+DEFAULT_MODULE_PATH(default) = ['/home/ansible/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+```
 
+## Figure 15.24. Library path in ansible.cfg
+
+```ini
+[defaults]
+
+library = ./library
+```
+
+## Figure 15.27. Ansible playbook output for custom module
+
+```bash
+<omitted>...
+TASK [debug] *************************************************************************************************************
+ok: [node1] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "hostname": "node-1",
+        "msg": "Application Name: bash (version: 1.0) - This is a bash App",
+        "operating_system": "Linux"
+    }
+}
+<omitted>...
+```
+
+## Figure 15.32. Custom module details using ansible-doc command
+
+```shell
+[ansible@ansible Chapter-15]$ ansible-doc hello_message
+> HELLO_MESSAGE    (/home/ansible/ansible-book-packt/Chapter-15/library/hello_message.py)
+
+        A Hello Message Module
+
+OPTIONS (= is mandatory):
+
+= message
+        The message to be printed.
+
+        type: string
+
+- name
+        The name of the person.
+        [Default: (null)]
+        type: string
+
+
+AUTHOR: Gineesh Madapparambath (@ginigangadharan)
+
+EXAMPLES:
+```
+
+## Figure 15.33. Ansible custom module documentation details using ansible-doc command.png
+
+```shell
+<omitted>...
+EXAMPLES:
+
+# Simple Custom Hello App
+- name: Calling hello_message module
+  hello_message:
+    message: "Hello"
+    name: "John"
+
+
+RETURN VALUES:
+- greeting
+        Hello Response
+
+        returned: success
+        sample: Hello World
+        type: str
+
+- os_version
+        Operating System Information
+<omitted>...
+```
+
+## Figure 15.35. Verify playbook execution and hello_message module 
+
+```shell
+<omitted>...
+TASK [debug] *************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "greeting": "Hello John",
+        "os_version": "Linux 4.18.0-305.el8.x86_64 #1 SMP Thu Apr 29 08:54:30 EDT 2021"
+    }
+}
+<omitted>...
+```
+
+##
+
+
+```shell
+collection/
+├── docs/
+├── galaxy.yml
+├── meta/
+│   └── runtime.yml
+├── plugins/
+│   ├── modules/
+│   │   └── module1.py
+│   ├── inventory/
+│   └── .../
+├── README.md
+├── roles/
+│   ├── role1/
+│   ├── role2/
+│   └── .../
+├── playbooks/
+│   ├── files/
+│   ├── vars/
+│   ├── templates/
+│   └── tasks/
+└── tests/
+...<omitted>...
+```
+
+## Figure 15.37. Build Ansible collection archive
+
+```shell
+[ansible@ansible Chapter-15]$ cd collection
+[ansible@ansible collection]$ ansible-galaxy collection build
+Created collection for ginigangadharan.custom_modules_demo at /home/ansible/ansible-book-packt/Chapter-15/collection/ginigangadharan-custom_modules_demo-1.0.0.tar.gz
+[ansible@ansible Chapter-15]$
+```
+
+## Figure 15.38. Publish collection to Ansible Galaxy 
+
+```shell
+[ansible@ansible collection]$ ansible-galaxy collection publish \
+> --token $ANSIBLE_GALAXY_TOKEN \
+> ./ginigangadharan-custom_modules_demo-1.0.0.tar.gz 
+Publishing collection artifact '/home/ansible/ansible-book-packt/Chapter-15/collection/ginigangadharan-custom_modules_demo-1.0.0.tar.gz' to default https://galaxy.ansible.com/api/
+Collection has been published to the Galaxy server default https://galaxy.ansible.com/api/
+Waiting until Galaxy import task https://galaxy.ansible.com/api/v2/collection-imports/20104/ has completed
+Collection has been successfully published and imported to the Galaxy server default https://galaxy.ansible.com/api/
 ```
