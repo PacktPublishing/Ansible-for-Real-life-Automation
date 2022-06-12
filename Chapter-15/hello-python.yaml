@@ -1,0 +1,16 @@
+---
+- name: Testing Custom Module
+  hosts: localhost
+  gather_facts: false
+  vars:
+    custom_message: "Hello"
+    custome_name: "John"
+  tasks:
+    - name: Calling custom module
+      hello_message:
+        message: "{{ custom_message }}"
+        name: "{{ custome_name }}"
+      register: custom_value
+
+    - debug:
+        msg: "{{ custom_value }}"
