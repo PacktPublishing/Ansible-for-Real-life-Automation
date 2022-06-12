@@ -1,0 +1,55 @@
+# todo-app.yaml
+---
+- name: Managing todo application using API
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars:
+    todo_app_ur: 'http://todo-app.example.com:8081'
+    health_check: 'health'
+    
+    new_item:
+      title: Learn API call using Ansible
+      description: A new task added by Ansible
+      completed: false
+
+  tasks:
+    - name: Check that you can connect (GET) to a page and it returns a status 200
+      uri:
+        url: "{{ todo_app_ur }}/{{ health_check }}"
+        return_content: yes
+        status_code: 200
+      register: health_status
+    
+    - name: Display health check status
+      debug:
+        msg: "{{ health_status.content }}"
+
+    - name: Get ToDo Items
+      uri:
+        url: "{{ todo_app_ur }}/api/todos"
+        return_content: yes
+        status_code: 200
+      register: todo_items
+    
+    - name: Display items
+      debug:
+        msg: "{{ todo_items.content }}"
+        
+    - debug:
+        msg: "{{ new_item }}"
+
+    - name: Add a new item in ToDo list
+      uri:
+        url: "{{ todo_app_ur }}/api/todos"
+        method: POST
+        return_content: yes
+        status_code: 201
+        body_format: json
+        body: "{{ new_item }}"
+      register: item_add_status
+    
+    - name: Display items
+      debug:
+        msg: "{{ item_add_status }}"
+        

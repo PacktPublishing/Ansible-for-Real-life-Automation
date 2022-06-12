@@ -1,0 +1,16 @@
+# install-python.yaml
+---
+- name: Installing Python on target machine
+  hosts: "{{ NODES }}" 
+  gather_facts: false
+  tasks:
+    - name: Install Latest Python package
+      ansible.builtin.raw: sudo yum -y install python36
+
+    - name: Verify Python version
+      ansible.builtin.raw: python3 -V
+      register: python_version
+    
+    - name: Display installed Python version.
+      ansible.builtin.debug:
+        msg: "Installed Python version: {{ python_version.stdout_lines }}"

@@ -1,0 +1,38 @@
+# akamai-dns-block.yaml
+---
+- name: Block DNS in Akamai Device
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars:
+    akamai_api_endpoint: 'http://10.1.10.100:8080'
+    akamai_list_path: '/list/blacklist/nodes'
+    akamai_api_username: 'admin'
+    akamai_api_password: 'secretpassword'
+
+    dns_list:
+      - blockthisurl.com
+      - antherwebsite.com
+      - notagoodwebsite.com
+
+  tasks:
+    - name: Template the DNS List to block
+      ansible.builtin.set_fact:
+        dns_list_templated: "{{ lookup('template', 'akamai-url-block-format.j2') }}"
+
+    - name: "{{ akamai_list_name }} - Create substitute records Akamai"
+      uri:
+        url: "{{ akamai_api_endpoint }}{{ akamai_list_path }}"
+        method: POST
+        return_content: yes
+        user: "{{ akamai_api_username }}"
+        password: "{{ akamai_api_password }}"
+        status_code: 
+          - 201
+          - 200
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+        body_format: json
+        body: "{{ dns_list_templated }}"
+      register: akamai_add_out
