@@ -1,0 +1,21 @@
+
+---
+namespace: ginigangadharan
+name: custom_modules_demo
+version: 1.0.2
+readme: README.md
+authors:
+  - Gineesh Madapparambath <gini@iamgini.com>
+description: Ansible Custom Module Demo
+license:
+  - GPL-2.0-or-later
+license_file: ''
+tags:
+  - demos
+  - ansible
+  - devops
+dependencies: {}
+repository: https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/
+documentation: https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/blob/main/Chapter-15/README.md
+homepage: https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/blob/main/Chapter-15/README.md
+issues: https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/issues

@@ -1,0 +1,18 @@
+---
+- name: Testing Custom Module
+  hosts: node1
+  gather_facts: false
+
+  vars:
+    app_name: "bash"
+    app_version: "1.0"
+
+  tasks:
+    - name: Application Name and Version
+      customhello:
+        application_name: "{{ app_name }}"
+        application_version: "{{ app_version }}"
+      register: custom_value
+
+    - debug:
+        msg: "{{ custom_value }}"
