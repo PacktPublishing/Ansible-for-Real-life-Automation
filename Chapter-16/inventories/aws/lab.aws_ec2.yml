@@ -1,0 +1,23 @@
+# lab.aws_ec2.yml
+plugin: amazon.aws.aws_ec2
+boto_profile: ansible
+regions:
+  - ap-southeast-1
+#  - us-east-1
+#  - us-east-2
+filters:
+  tag:Environment: dev
+  tag:Criticality:
+    - low
+
+#keyed_groups:
+#  # add hosts to tag_Name_value groups for each aws_ec2 host's tags.Name variable
+#  - key: tags.Name
+#    prefix: tag_Name_
+#    separator: ""
+#groups:
+#  # add hosts to the group development if any of the dictionary's keys or values is the word 'devel'
+#  development: "'devel' in (tags|list)"
+#compose:
+#  # set the ansible_host variable to connect with the private IP address without changing the hostname
+#  ansible_host: private_ip_address

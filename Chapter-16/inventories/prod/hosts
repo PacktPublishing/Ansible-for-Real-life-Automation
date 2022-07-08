@@ -1,0 +1,25 @@
+# file: prod/hosts
+
+# singapore web servers
+# group variable in dev/group_vars/web.yaml
+[web]
+web101.example.com
+web102.example.com
+web103.example.com
+
+# singapore db servers
+# group variable in dev/group_vars/dbnodes.yaml
+[dbnodes]
+db201.example.com
+db202.example.com
+db203.example.com
+
+# backup ndoes in Malaysia
+[backupnodes]
+bkp101.example.com
+bkp102.example.com
+
+# singapore servers in a parent group
+[sgnodes:children]
+web
+dbnodes
