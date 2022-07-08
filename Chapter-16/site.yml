@@ -1,0 +1,56 @@
+---
+- name: System Reboot - Linux with email notification
+  hosts: "{{ NODES }}"
+  gather_facts: no
+  become: true
+  vars_files:
+    vars/smtp_secrets.yml
+  vars:
+    email_smtp_server: 'smtp.mail.com'
+    email_smtp_server_port: '587'
+    email_smtp_from_address: 'ansible@lab.local (Ansible Automation)'
+    email_smtp_to_address:
+          #- 'John Doe <john@lab.local>'
+          #- 'Linda <linda@lab.local>'
+    #email_smtp_cc_address:
+    #      - 'John Doe <john@gmail.com>'
+    email_smtp_replyto_address: 'no-reply@lab.local' 
+
+  tasks:
+    # Task to send a notification email before the reboot operation.
+    - name: Email notification before reboot
+      include_role:
+        name: send-email
+      vars:
+        email_report_body: "Alert: {{ inventory_hostname }} is rebooting as per schedule. Please do not use the server. Notification will be sent after the reboot activity is completed."
+        email_smtp_subject: "Weekly System Reboot - {{ inventory_hostname }} - Initiated"
+      tags:
+        - email
+        - notification
+
+    # You may add your pre-reboot tasks here
+    # such as taking backups, configure maintainance mode,
+    # disable monitoring and so on.
+    - name: Running Pre-reboot tasks
+      debug:
+        msg: "Taking backup and snapshot" 
+      tags:
+        - pretasks
+        - backup
+
+
+    - name: Reboot node and wait for 5 min
+      reboot:
+        reboot_timeout: 300
+
+    - name: Running Post-reboot tasks
+      debug:
+        msg: "Verifying services and filesystem" 
+        # you can include your verification tasks here.
+
+    - name: Email notification after reboot
+      include_role:
+        name: send-email
+      vars:
+        email_report_body: "Alert: {{ inventory_hostname }} reboot activity has been completed."
+        email_smtp_subject: "Weekly System Reboot - {{ inventory_hostname }} - completed"        

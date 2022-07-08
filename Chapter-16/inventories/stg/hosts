@@ -1,0 +1,9 @@
+# file: stg/hosts
+[web]
+node1 ansible_host=192.168.56.25
+node2 ansible_host=192.168.56.24
+node3 ansible_host=192.168.56.60
+
+
+[all:vars]
+ansible_ssh_private_key_file=/home/ansible/.ssh/id_rsa 
