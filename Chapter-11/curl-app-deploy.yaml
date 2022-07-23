@@ -39,5 +39,6 @@
         kubeconfig: "{{ kubeconfig_file }}"
         state: absent
         src: curl-app-pod.yaml
-        namespace: "{{ namespace_name }}"     
+        namespace: "{{ namespace_name }}"
+      when: a is defined
         
