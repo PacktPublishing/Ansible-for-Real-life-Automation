@@ -1,16 +1,17 @@
 ---
-- hosts: node1
-  vars_prompt:
+- name: Accepting sensitive data using prompts
+  hosts: node1
+  gather_facts: no
 
-    - name: user_name
+  vars_prompt:
+    - name: database_username
       prompt: Enter your username
       private: no
 
-    - name: password
+    - name: database_password
       prompt: Enter your password
 
   tasks:
-
     - name: Print a message
       ansible.builtin.debug:
-        msg: 'Logging in as {{ user_name }}'
+        msg: 'Login to database as {{ database_username }}'
