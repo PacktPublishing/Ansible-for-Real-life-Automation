@@ -3,6 +3,8 @@
 
 - name: "Running Part 01 checks"
   include_tasks: "part-01.yml"
+  when: "'01.01' not in baseline_exclusions"
 
 - name: "Running Part 02 checks"
   include_tasks: "part-02.yml"
+  when: "'02.01' not in baseline_exclusions"

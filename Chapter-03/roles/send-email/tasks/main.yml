@@ -1,4 +1,6 @@
 ---
+# roles/send-email/tasks/main.yml
+
 - name: Sending notification email
   mail:
     host: "{{ email_smtp_server }}"

@@ -1,8 +1,9 @@
+# part-01.yml
+
 - name: "Ensure sudo is installed"
   dnf:
     name: sudo
     state: present
-  when: "'01.01' not in baseline_exclusions"
 
 - name: "Ensure sudo log file exists"
   lineinfile:
@@ -11,4 +12,3 @@
     line: 'Defaults logfile="{{ sudo_log }}"'
     insertafter: "^# Defaults specification"
     validate: /usr/sbin/visudo -cf %s
-  when: "'01.02' not in baseline_exclusions"

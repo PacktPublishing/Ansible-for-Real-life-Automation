@@ -1,3 +1,4 @@
+## Chapter-07/gcp-create-instance.yml
 ---
 - name: "Provision new GCP instance"
   hosts: localhost
