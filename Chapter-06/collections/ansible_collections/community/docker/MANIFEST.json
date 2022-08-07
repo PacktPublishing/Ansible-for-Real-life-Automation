@@ -1,0 +1,30 @@
+{
+ "collection_info": {
+  "namespace": "community",
+  "name": "docker",
+  "version": "2.7.0",
+  "authors": [
+   "Ansible Docker Working Group"
+  ],
+  "readme": "README.md",
+  "tags": [
+   "docker"
+  ],
+  "description": "Modules and plugins for working with Docker",
+  "license": [],
+  "license_file": "COPYING",
+  "dependencies": {},
+  "repository": "https://github.com/ansible-collections/community.docker",
+  "documentation": null,
+  "homepage": "https://github.com/ansible-collections/community.docker",
+  "issues": "https://github.com/ansible-collections/community.docker/issues"
+ },
+ "file_manifest_file": {
+  "name": "FILES.json",
+  "ftype": "file",
+  "chksum_type": "sha256",
+  "chksum_sha256": "39ecc672d5c0e1f0ee43ff295755843420c2b4e814d411b04bdde775d711e0c4",
+  "format": 1
+ },
+ "format": 1
+}

@@ -1,3 +1,5 @@
+# part-02.yml
+
 - name: "Ensure message of the day is configured properly"
   copy:
     src: "{{ motd_file }}"
@@ -5,7 +7,6 @@
     owner: root
     group: root
     mode: 0644
-  when: "'02.01' not in baseline_exclusions"
   
 - name: "Ensure local login warning banner is configured properly"
   copy:
@@ -14,4 +15,3 @@
     owner: root
     group: root
     mode: 0644
-  when: "'02.02' not in baseline_exclusions"

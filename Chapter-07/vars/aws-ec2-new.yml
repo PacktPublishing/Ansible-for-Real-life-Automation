@@ -1,3 +1,4 @@
+## vars/aws-ec2-new.yml
 ---
 # list of ec2 instances
 ec2_new_list:

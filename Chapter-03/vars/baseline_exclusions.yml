@@ -1,3 +1,5 @@
+# vars/baseline_exclusions.yml
+
 baseline_exclusions:
   #- '01.01'
   # Ensure sudo is installed
