@@ -19,11 +19,15 @@ galaxy_info:
         - 31
         - 32
         - 33
+        - 34
+        - 35
+        - 36
     - name: Ubuntu
       versions:
         - xenial
         - bionic
         - focal
+        - jammy
     - name: Debian
       versions:
         - wheezy

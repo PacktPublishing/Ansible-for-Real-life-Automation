@@ -17,6 +17,11 @@ You can verify the roles installation as follows.
 - geerlingguy.pip, 2.1.0 
 ```
 
+## Execute the playbook to deploy Docker on the host: 
+
+```
+[ansible@ansible Chapter-10]$ ansible-playbook deploy-docker.yaml -e "NODES=dockerhost" 
+```
 ## Verify Docker installation
 
 ```shell
@@ -50,6 +55,12 @@ COLLECTIONS_PATHS = ./collections
 roles_path = roles 
 ```
 
+##
+
+```
+[ansible@ansible Chapter-10]$ ansible-galaxy collection install community.docker 
+```
+
 ## Docker collection 
 
 ```shell
@@ -57,6 +68,12 @@ roles_path = roles
 [ansible@ansible Chapter-10]$ ansible-galaxy collection list |grep -i docker 
 community.docker              1.10.2  
 community.docker 2.3.0   
+```
+
+## Figure 10.14 - Execute the playbook on Docker host 
+
+```
+[ansible@ansible Chapter-10]$ ansible-playbook container-manage.yaml -e "NODES=dockerhost" 
 ```
 
 ## nginx container running
@@ -81,6 +98,12 @@ e36fb7419165   nginx     "/docker-entrypoint.…"   10 minutes ago   Up 10 minut
 <p><em>Thank you for using nginx.</em></p> 
 </body> 
 </html> 
+```
+
+## Execute the container-manage.yaml to stop the container
+
+```
+[ansible@ansible Chapter-10]$ ansible-playbook container-manage.yaml -e "NODES=dockerhost container_action=stop" 
 ```
 
 ## nginx container stopped and removed
@@ -110,4 +133,24 @@ d5253f49d1c9   wordpress   "docker-entrypoint.s…"   15 minutes ago   Up 15 min
 DRIVER    VOLUME NAME
 local     mariadb
 local     wordpress
+```
+
+## Build and push container image
+
+```
+[ansible@ansible Chapter-10]$ ansible-playbook container-build.yaml -e "NODES=dockerhost" --ask-vault-password 
+Vault password: 
+```
+
+## Execute with different container image
+
+```
+[ansible@ansible Chapter-10]$ ansible-playbook container-manage.yaml -e "NODES=dockerhost container_image=ginigangadharan/todo-app container_name=todo-app container_port=3000 container_expose_port=8081" 
+```
+
+
+## execute wordpress playbook
+
+```
+[ansible@ansible Chapter-10]$ ansible-playbook deploy-wordpress-on-docker.yaml -e "NODES=dockerhost" 
 ```
