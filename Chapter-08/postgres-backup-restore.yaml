@@ -1,4 +1,4 @@
-# postgres-backup-restore.yaml
+# Chapter-08/postgres-backup-restore.yaml
 ---
 - name: Deploying PostgreSQL Database Server
   hosts: "{{ NODES }}" 

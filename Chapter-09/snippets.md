@@ -33,6 +33,13 @@ ok: [localhost]
 
 ```
 
+## install haproxy role
+
+```
+[ansible@ansible Chapter-09]$ cd roles 
+
+[ansible@ansible roles]$ ansible-galaxy role install geerlingguy.haproxy 
+```
 ## Execute haproxy playbook
 
 ```
@@ -43,6 +50,58 @@ TASK [Verify load balancer health]**********************************************
 ok: [node3 -> localhost] 
 . 
 . 
+```
+
+## Using serial in playbook
+
+```
+. 
+  hosts: web 
+  become: yes 
+  serial: 25% 
+  tasks: 
+. 
+. 
+```
+
+## Using serial 
+```
+  serial: 
+    - 1 
+    - 20% 
+    - 100% 
+```
+
+## Updating source code in Git
+
+```shell
+## Update the website’s content with some changes by creating a new branch in the repository. (Use the https://github.com/ginigangadharan/website-demo-one-page repository and make a copy for testing purposes.) 
+
+## Clone the repository to your local machine: 
+[ansible@ansible ~]$ git clone git@github.com:ginigangadharan/website-demo-one-page 
+
+## Switch to the repository’s directory: 
+[ansible@ansible ~]$ cd website-demo-one-page 
+
+
+## Switch to the production branch: 
+[ansible@ansible website-demo-one-page]$ git checkout production 
+Switched to branch 'production' 
+Your branch is up to date with 'origin/production'. 
+
+[ansible@ansible website-demo-one-page]$ git checkout -b v2            
+Switched to a new branch 'v2' 
+
+```
+
+## [ansible@ansible website-demo-one-page]$ git add .;git commit -m "v2" 
+
+[ansible@ansible website-demo-one-page]$ git push -u origin v2 
+
+```
+[ansible@ansible website-demo-one-page]$ git add .;git commit -m "v2" 
+
+[ansible@ansible website-demo-one-page]$ git push -u origin v2 
 ```
 
 ## playbook rolling update

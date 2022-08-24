@@ -43,6 +43,39 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg 
 EOF 
 ```
+
+## Figure 11.13 – Pod details from a Kubernetes namespace 
+
+```
+[ansible@ansible Chapter-11]$ ansible-playbook k8s-details.yaml |more
+
+...<output omitted for brevity>...
+
+TASK [Display Pod Details] *****************************************************
+ok: [localhost] => {
+    "msg": {
+        "api_found": true,
+        "changed": false,
+        "failed": false,
+        "resources": [
+            {
+                "apiVersion": "v1",
+                "kind": "Pod",
+                "metadata": {
+                    "creationTimestamp": "2022-02-01T06:57:46Z",
+                    "generateName": "coredns-64897985d-",
+                    "labels": {
+                        "k8s-app": "kube-dns",
+                        "pod-template-hash": "64897985d"
+                    },
+                    "managedFields": [
+                        {
+                            "apiVersion": "v1",
+                            "fieldsType": "FieldsV1",
+
+...<output omitted for brevity>...
+```
+
 ## Cluster nodes
 
 ```shell
@@ -158,6 +191,12 @@ External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
+## Figure 11.34 - Execute Kubernetes Deployment scaling playbook
+
+```
+[ansible@ansible Chapter-11]$ ansible-playbook k8s-app-scale.yaml 
+```
+
 ## Figure 11.28 – Pod replicas after scaling
 
 ```shell
@@ -167,6 +206,10 @@ todo-app-546b5b58d-5j8nj   1/1     Running   0          28s
 todo-app-546b5b58d-7sr8j   1/1     Running   0          28s
 todo-app-546b5b58d-bhhnz   1/1     Running   0          24m
 todo-app-546b5b58d-r9nmz   1/1     Running   0          28s
+```
+
+```
+$ kubectl exec --stdin --tty POD_NAME -- /bin/bash 
 ```
 
 ## Figure 11.34 – Curl command output for todoapp-svc 

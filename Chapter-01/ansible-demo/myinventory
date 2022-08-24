@@ -1,0 +1,14 @@
+[myself]  
+localhost  
+  
+[intranetweb]  
+servera.techbeatly.com  
+serverb.techbeatly.com  
+  
+[database]  
+db101.techbeatly.com  
+  
+[everyone:children]  
+myself  
+intranetweb  
+database

@@ -68,6 +68,15 @@ This message is configured by Ansible
 ------------------------------------- 
 ```
 
+## Figure 3.5 - Using template module in playbook 
+
+```
+  tasks: 
+    - name: Deploy motd 
+      template: 
+        dest: /etc/motd 
+        src: motd.j2 
+```        
 ## motd templated
 
 ```
@@ -296,8 +305,8 @@ $ ansible-playbook site.yml --extra-vars "@vars_file.json"
 ## reboot status
 
 ```
-[devops@node-1 ~]$ uptime 
- 14:53:59 up 0 min,  1 user,  load average: 0.23, 0.08, 0.03 
+[devops@node-1 ~]$ uptime
+ 09:03:22 up 0 min,  1 user,  load average: 0.76, 0.24, 0.08
 ```
 
 
