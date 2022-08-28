@@ -5,4 +5,4 @@
 
 - name: Provision VM
   include_tasks: vmware-provisioning-task.yaml
-  #when: vm_check.failed
+  when: vm_check.failed
