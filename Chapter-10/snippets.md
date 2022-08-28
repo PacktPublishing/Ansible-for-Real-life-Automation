@@ -9,7 +9,7 @@ node1 ansible_host=192.168.56.25
 
 ```shell
 [ansible@ansible Chapter-10]$ ansible-galaxy install geerlingguy.docker -p roles/ 
-[ansibe@ansible Chapter-10]$ ansible-galaxy install geerlingguy.pip -p roles/ 
+[ansible@ansible Chapter-10]$ ansible-galaxy install geerlingguy.pip -p roles/ 
 You can verify the roles installation as follows. 
 [ansible@ansible Chapter-10]$ ansible-galaxy role list 
 # /home/ansible/ansible-book-packt/Chapter-10/roles 

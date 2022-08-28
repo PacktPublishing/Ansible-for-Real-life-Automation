@@ -10,6 +10,6 @@
     - name: Install docker
       include_role:
         name: geerlingguy.docker
-    - name: Install docker
+    - name: Install Packges
       include_role:
         name: geerlingguy.pip
