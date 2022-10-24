@@ -55,3 +55,7 @@ We also provide a PDF file that has color images of the screenshots/diagrams use
 has over 15 years of experience in IT service management and consultancy with experience in planning, deploying, and supporting Linux-based projects.
 He has designed, developed, and deployed automation solutions based on Ansible and Ansible Automation Platform (formerly Ansible Tower) for bare metal and virtual server building, patching, container management, network operations, and custom monitoring. Gineesh has coordinated, designed, and deployed servers in data centers globally and has cross-cultural experience in classic, private cloud (OpenStack and VM ware), and public cloud environments (AWS, Azure, and Google Cloud Platform).
 Gineesh has handled multiple roles such as systems engineer, automation specialist, infrastructure designer, and content author. His primary focus is on IT and application automation using Ansible, containerization using OpenShift (and Kubernetes), and infrastructure automation using Terraform.
+### Download a free PDF
+
+ <i>If you have already purchased a print or Kindle version of this book, you can get a DRM-free PDF version at no cost.<br>Simply click on the link to claim your free PDF.</i>
+<p align="center"> <a href="https://packt.link/free-ebook/9781803235417">https://packt.link/free-ebook/9781803235417 </a> </p>
