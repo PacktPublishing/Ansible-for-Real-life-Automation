@@ -54,7 +54,7 @@ We also provide a PDF file that has color images of the screenshots/diagrams use
 * Mastering Ansible - Fourth Edition [[Packt]](https://www.packtpub.com/product/mastering-ansible/9781801818780) [[Amazon]](https://www.amazon.com/dp/1801818789)
 
 ## Get to Know the Author
-**Gineesh Madapparambath**
+[**Gineesh Madapparambath**](https://www.linkedin.com/in/gineesh)
 has over 15 years of experience in IT service management and consultancy with experience in planning, deploying, and supporting Linux-based projects.
 He has designed, developed, and deployed automation solutions based on Ansible and Ansible Automation Platform (formerly Ansible Tower) for bare metal and virtual server building, patching, container management, network operations, and custom monitoring. Gineesh has coordinated, designed, and deployed servers in data centers globally and has cross-cultural experience in classic, private cloud (OpenStack and VM ware), and public cloud environments (AWS, Azure, and Google Cloud Platform).
 Gineesh has handled multiple roles such as systems engineer, automation specialist, infrastructure designer, and content author. His primary focus is on IT and application automation using Ansible, containerization using OpenShift (and Kubernetes), and infrastructure automation using Terraform.
