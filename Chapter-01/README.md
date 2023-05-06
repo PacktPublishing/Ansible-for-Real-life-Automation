@@ -94,7 +94,7 @@ Create a project directory and `ansible.cfg`
 [ansible@ansible ansible-demo]$ vim ansible.cfg
 
 [ansible@ansible ansible-demo]$ cat ansible.cfg 
-  [Defaults]
+  [defaults]
   inventory = ./hosts 
   remote_user = devops
   ask_pass = false       
@@ -114,7 +114,7 @@ Sample `ansible.cfg` with privilege escaltion details.
 
 ```shell
 [ansible@ansible ansible-demo]$ cat ansible.cfg 
-[Defaults]
+[defaults]
 inventory = ./hosts 
 remote_user = devops
 ask_pass = false       
