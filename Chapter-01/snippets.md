@@ -109,7 +109,7 @@ libyaml = True
 ## Figure 1.14 - Content of ansible.cfg 
 
 ```
-[Defaults]  
+[defaults]  
 inventory = ./hosts  
 remote_user = devops  
 ask_pass = false
@@ -130,7 +130,7 @@ config file = /home/ansible/ansible-demo/ansible.cfg
 
 ```
 [ansible@ansible ansible-demo]$ cat ansible.cfg  
-[Defaults]  
+[defaults]  
 inventory = ./hosts  
 remote_user = devops  
 ask_pass = false        
